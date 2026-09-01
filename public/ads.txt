@@ -1,0 +1,3 @@
+# Google AdSense requires an ads.txt file to verify your ownership and authorized sellers.
+# Replace pub-0000000000000000 with your actual publisher ID from your Google AdSense account.
+google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0
