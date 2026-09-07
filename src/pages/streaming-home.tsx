@@ -18,7 +18,7 @@ import {
 } from "@/lib/api-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { WebsiteReviews } from "@/components/WebsiteReviews";
-import { PortraitCard, LandscapeCard } from "@/components/ContentCard";
+import { HOME_CARD_CONTAINER_CLASS, PortraitCard, LandscapeCard } from "@/components/ContentCard";
 import SubscriptionPlansModal from "@/components/SubscriptionPlansModal";
 
 /* ─── TYPES ─── */
@@ -157,13 +157,13 @@ function SectionHeader({ title, icon, onSeeAll, count }: { title: string; icon?:
 }
 
 /* ─── FEATURED CARD wrapper (delegates to LandscapeCard) ─── */
-function FeaturedCard({ item, onPlay, size = "md" }: { item: ContentItem; onPlay: (item: ContentItem) => void; size?: "sm" | "md" | "lg" }) {
-  return <LandscapeCard item={item} onClick={() => onPlay(item)} size={size} />;
+function FeaturedCard({ item, onPlay, size = "md", homeStyle = false }: { item: ContentItem; onPlay: (item: ContentItem) => void; size?: "sm" | "md" | "lg"; homeStyle?: boolean }) {
+  return <LandscapeCard item={item} onClick={() => onPlay(item)} size={size} homeStyle={homeStyle} />;
 }
 
 /* ─── CONTENT CARD wrapper (delegates to PortraitCard for grids, LandscapeCard for rows) ─── */
-function ContentCard({ item, onPlay, size = "md", fullWidth = false }: { item: ContentItem; onPlay: (item: ContentItem) => void; size?: "sm" | "md" | "lg"; fullWidth?: boolean }) {
-  return <PortraitCard item={item} onClick={() => onPlay(item)} size={size} fullWidth={fullWidth} />;
+function ContentCard({ item, onPlay, size = "md", fullWidth = false, homeStyle = false, compactStyle = false }: { item: ContentItem; onPlay: (item: ContentItem) => void; size?: "sm" | "md" | "lg"; fullWidth?: boolean; homeStyle?: boolean; compactStyle?: boolean }) {
+  return <PortraitCard item={item} onClick={() => onPlay(item)} size={size} fullWidth={fullWidth} homeStyle={homeStyle} compactStyle={compactStyle} />;
 }
 
 /* ─── SHORT DRAMA CARD (9:16) ─── */
@@ -174,7 +174,10 @@ const DRAMA_BADGE_MAP: Record<string, string> = {
   EXCLUSIVE: "bg-purple-600 text-white",
 };
 
-function ShortDramaCard({ drama, onClick, fullWidth }: { drama: ShortDrama; onClick: () => void; fullWidth?: boolean }) {
+const HOME_DRAMA_CARD_WIDTH = "w-[150px] sm:w-[180px] lg:w-[200px]";
+const COMPACT_DRAMA_CARD_WIDTH = "w-[120px] sm:w-[135px] lg:w-[150px]";
+
+function ShortDramaCard({ drama, onClick, fullWidth, homeStyle = false, compactStyle = false }: { drama: ShortDrama; onClick: () => void; fullWidth?: boolean; homeStyle?: boolean; compactStyle?: boolean }) {
   const isSubscribed = (() => {
     try {
       const stored = localStorage.getItem("appUser");
@@ -188,12 +191,11 @@ function ShortDramaCard({ drama, onClick, fullWidth }: { drama: ShortDrama; onCl
 
   return (
     <div
-      className={`group relative flex-shrink-0 cursor-pointer ${fullWidth ? "w-full" : ""}`}
-      style={fullWidth ? {} : { width: "clamp(160px, 20vw, 200px)" }}
+      className={`group relative flex-shrink-0 cursor-pointer ${fullWidth ? "w-full" : compactStyle ? COMPACT_DRAMA_CARD_WIDTH : homeStyle ? HOME_DRAMA_CARD_WIDTH : "w-[160px] sm:w-[180px] lg:w-[200px]"}`}
       onClick={onClick}
     >
       <div
-         className="relative overflow-hidden rounded-xl bg-zinc-900 transition-all duration-300 group-hover:ring-2 group-hover:ring-purple-500/60 group-hover:scale-[1.03] shadow-lg"
+         className={`relative bg-zinc-900 transition-all duration-300 ${compactStyle ? "rounded-[6px] overflow-hidden group-hover:ring-1 group-hover:ring-purple-500/60 shadow-lg" : homeStyle ? `${HOME_CARD_CONTAINER_CLASS} shadow-lg shadow-black/30 group-hover:shadow-xl group-hover:shadow-black/50 group-hover:ring-1 group-hover:ring-purple-500/60` : "rounded-xl overflow-hidden group-hover:ring-2 group-hover:ring-purple-500/60 shadow-lg"}`}
         style={{ aspectRatio: "9/16" }}
       >
         <img
@@ -243,8 +245,8 @@ function useRowScroll() {
   return { rowRef, scroll };
 }
 
-function FeaturedRow({ title, icon, items, onPlay, size = "md", onSeeAll }: {
-  title: string; icon?: React.ReactNode; items: ContentItem[]; onPlay: (item: ContentItem) => void; size?: "sm" | "md" | "lg"; onSeeAll?: () => void;
+function FeaturedRow({ title, icon, items, onPlay, size = "md", onSeeAll, homeStyle = false }: {
+  title: string; icon?: React.ReactNode; items: ContentItem[]; onPlay: (item: ContentItem) => void; size?: "sm" | "md" | "lg"; onSeeAll?: () => void; homeStyle?: boolean;
 }) {
   const { rowRef, scroll } = useRowScroll();
   if (!items.length) return null;
@@ -260,7 +262,7 @@ function FeaturedRow({ title, icon, items, onPlay, size = "md", onSeeAll }: {
         </button>
         <div ref={rowRef} className="flex gap-4 overflow-x-auto px-4 sm:px-8 lg:px-12 pb-2" style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}>
           {items.map((item) => (
-            <FeaturedCard key={item.id || item._id} item={item} onPlay={onPlay} size={size} />
+            <FeaturedCard key={item.id || item._id} item={item} onPlay={onPlay} size={size} homeStyle={homeStyle} />
           ))}
         </div>
       </div>
@@ -268,8 +270,8 @@ function FeaturedRow({ title, icon, items, onPlay, size = "md", onSeeAll }: {
   );
 }
 
-function ContentRow({ title, icon, items, onPlay, size = "md", onSeeAll }: {
-  title: string; icon?: React.ReactNode; items: ContentItem[]; onPlay: (item: ContentItem) => void; size?: "sm" | "md" | "lg"; onSeeAll?: () => void;
+function ContentRow({ title, icon, items, onPlay, size = "md", onSeeAll, homeStyle = false }: {
+  title: string; icon?: React.ReactNode; items: ContentItem[]; onPlay: (item: ContentItem) => void; size?: "sm" | "md" | "lg"; onSeeAll?: () => void; homeStyle?: boolean;
 }) {
   const { rowRef, scroll } = useRowScroll();
   if (!items.length) return null;
@@ -285,7 +287,7 @@ function ContentRow({ title, icon, items, onPlay, size = "md", onSeeAll }: {
         </button>
         <div ref={rowRef} className="flex gap-4 overflow-x-auto px-4 sm:px-8 lg:px-12 pb-2" style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}>
           {items.map((item) => (
-            <FeaturedCard key={item.id || item._id} item={item} onPlay={onPlay} size={size} />
+            <ContentCard key={item.id || item._id} item={item} onPlay={onPlay} size={size} homeStyle={homeStyle} />
           ))}
         </div>
       </div>
@@ -293,8 +295,8 @@ function ContentRow({ title, icon, items, onPlay, size = "md", onSeeAll }: {
   );
 }
 
-function ShortDramaRow({ title, icon, items, onSelect, onSeeAll }: {
-  title: string; icon?: React.ReactNode; items: ShortDrama[]; onSelect: (d: ShortDrama) => void; onSeeAll?: () => void;
+function ShortDramaRow({ title, icon, items, onSelect, onSeeAll, homeStyle = false }: {
+  title: string; icon?: React.ReactNode; items: ShortDrama[]; onSelect: (d: ShortDrama) => void; onSeeAll?: () => void; homeStyle?: boolean;
 }) {
   const { rowRef, scroll } = useRowScroll();
   if (!items.length) return null;
@@ -310,7 +312,7 @@ function ShortDramaRow({ title, icon, items, onSelect, onSeeAll }: {
         </button>
         <div ref={rowRef} className="flex gap-4 overflow-x-auto px-4 sm:px-8 lg:px-12 pb-2" style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}>
           {items.map((d) => (
-            <ShortDramaCard key={d.id || d._id} drama={d} onClick={() => onSelect(d)} />
+            <ShortDramaCard key={d.id || d._id} drama={d} onClick={() => onSelect(d)} homeStyle={homeStyle} />
           ))}
         </div>
       </div>
@@ -572,9 +574,9 @@ function MoviesTab({ onPlay }: { onPlay: (item: ContentItem) => void }) {
       {isLoading ? (
         <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-red-600" /></div>
       ) : (
-        <div className="px-4 sm:px-8 lg:px-12 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+        <div className="px-4 sm:px-8 lg:px-12 flex flex-wrap gap-4">
           {filtered.map((item: any) => (
-            <ContentCard key={item.id || item._id} item={item} onPlay={onPlay} />
+            <ContentCard key={item.id || item._id} item={item} onPlay={onPlay} compactStyle />
           ))}
         </div>
       )}
@@ -598,9 +600,9 @@ function TVShowsTab({ onPlay }: { onPlay: (item: ContentItem) => void }) {
       {isLoading ? (
         <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-red-600" /></div>
       ) : (
-        <div className="px-4 sm:px-8 lg:px-12 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+        <div className="px-4 sm:px-8 lg:px-12 flex flex-wrap gap-4">
           {filtered.map((item: any) => (
-            <ContentCard key={item.id || item._id} item={item} onPlay={onPlay} />
+            <ContentCard key={item.id || item._id} item={item} onPlay={onPlay} compactStyle />
           ))}
         </div>
       )}
@@ -748,9 +750,9 @@ function ShortDramaTab({ onSelect }: { onSelect: (d: ShortDrama) => void }) {
         <p className="text-white text-sm mt-1">{allDramas.length} series · Portrait 9:16 · Episode-based</p>
       </div>
 
-      <div className="px-4 sm:px-8 lg:px-12 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mb-10">
+      <div className="px-4 sm:px-8 lg:px-12 flex flex-wrap gap-4 mb-10">
         {allDramas.map((d: any) => (
-          <ShortDramaCard key={d.id || d._id} drama={d} onClick={() => onSelect(d)} />
+          <ShortDramaCard key={d.id || d._id} drama={d} onClick={() => onSelect(d)} compactStyle />
         ))}
       </div>
 
@@ -852,11 +854,11 @@ function HomeTab({ onPlay, onSelectDrama, onSubscribeClick, isSubscribed }: {
             {cw.map((item: any) => (
               <div
                 key={item.id}
-                className="group relative flex-shrink-0 w-[260px] sm:w-[300px] cursor-pointer"
+                className="group relative flex-shrink-0 w-[240px] sm:w-[280px] cursor-pointer"
                 onClick={() => onPlay(item)}
               >
                 {/* Card */}
-                 <div className="relative rounded-xl overflow-hidden bg-zinc-900 shadow-lg" style={{ aspectRatio: "16/9" }}>
+                 <div className={`relative bg-zinc-900 shadow-lg shadow-black/30 group-hover:shadow-xl transition-shadow ${HOME_CARD_CONTAINER_CLASS}`} style={{ aspectRatio: "16/9" }}>
                   <img
                     src={getImageUrl(item.backdrop || item.poster || item.posterImage || item.thumbnail) || ""}
                     alt={item.title || ""}
@@ -916,11 +918,11 @@ function HomeTab({ onPlay, onSelectDrama, onSubscribeClick, isSubscribed }: {
                   {items.map((item: any) => (
                     <Fragment key={item.id || item._id}>
                       {section.itemType === 'landscape' ? (
-                        <LandscapeCard item={item} onClick={() => onPlay(item)} fullWidth />
+                        <LandscapeCard item={item} onClick={() => onPlay(item)} fullWidth homeStyle />
                       ) : section.itemType === 'drama' ? (
-                        <ShortDramaCard drama={item} onClick={() => onSelectDrama(item)} fullWidth />
+                        <ShortDramaCard drama={item} onClick={() => onSelectDrama(item)} fullWidth homeStyle />
                       ) : (
-                        <PortraitCard item={item} onClick={() => onPlay(item)} fullWidth />
+                        <PortraitCard item={item} onClick={() => onPlay(item)} fullWidth homeStyle />
                       )}
                     </Fragment>
                   ))}
@@ -929,11 +931,11 @@ function HomeTab({ onPlay, onSelectDrama, onSubscribeClick, isSubscribed }: {
             );
           } else {
             if (section.itemType === 'landscape') {
-              rowContent = <FeaturedRow title={section.title} items={items} onPlay={onPlay} onSeeAll={() => setLocation(`/browse?section=${section._id}`)} />;
+              rowContent = <FeaturedRow title={section.title} items={items} onPlay={onPlay} homeStyle onSeeAll={() => setLocation(`/browse?section=${section._id}`)} />;
             } else if (section.itemType === 'drama') {
-              rowContent = <ShortDramaRow title={section.title} items={items} onSelect={onSelectDrama} onSeeAll={() => setLocation(`/browse?section=${section._id}`)} />;
+              rowContent = <ShortDramaRow title={section.title} items={items} onSelect={onSelectDrama} homeStyle onSeeAll={() => setLocation(`/browse?section=${section._id}`)} />;
             } else {
-              rowContent = <ContentRow title={section.title} items={items} onPlay={onPlay} size="lg" onSeeAll={() => setLocation(`/browse?section=${section._id}`)} />;
+              rowContent = <ContentRow title={section.title} items={items} onPlay={onPlay} size="lg" homeStyle onSeeAll={() => setLocation(`/browse?section=${section._id}`)} />;
             }
           }
           
@@ -947,20 +949,20 @@ function HomeTab({ onPlay, onSelectDrama, onSubscribeClick, isSubscribed }: {
         <>
           {/* HARDCODED FALLBACK START */}
           {homeData.featuredDramas?.length > 0 && (
-            <ShortDramaRow title="Short Drama — Hot Now" icon={<Smartphone className="w-4 h-4" />} items={homeData.featuredDramas} onSelect={onSelectDrama} onSeeAll={() => setLocation("/browse?short-drama")} />
+            <ShortDramaRow title="Short Drama — Hot Now" icon={<Smartphone className="w-4 h-4" />} items={homeData.featuredDramas} onSelect={onSelectDrama} homeStyle onSeeAll={() => setLocation("/browse?short-drama")} />
           )}
           {homeData.newDramas?.length > 0 && (
-            <ShortDramaRow title="New Short Drama" icon={<Crown className="w-4 h-4" />} items={homeData.newDramas} onSelect={onSelectDrama} onSeeAll={() => setLocation("/browse?short-drama")} />
+            <ShortDramaRow title="New Short Drama" icon={<Crown className="w-4 h-4" />} items={homeData.newDramas} onSelect={onSelectDrama} homeStyle onSeeAll={() => setLocation("/browse?short-drama")} />
           )}
           {homeData.trendingNow?.length > 0 && (
-            <FeaturedRow title="Trending Now" icon={<TrendingUp className="w-4 h-4" />} items={homeData.trendingNow} onPlay={onPlay} onSeeAll={() => setLocation("/browse?trending")} />
+            <FeaturedRow title="Trending Now" icon={<TrendingUp className="w-4 h-4" />} items={homeData.trendingNow} onPlay={onPlay} homeStyle onSeeAll={() => setLocation("/browse?trending")} />
           )}
 
           {/* ── HOME PAGE AD BANNER ── */}
           <HomeBannerAd />
 
           {homeData.newReleases?.length > 0 && (
-            <FeaturedRow title="New Releases" icon={<Sparkles className="w-4 h-4" />} items={homeData.newReleases} onPlay={onPlay} onSeeAll={() => setLocation("/browse?new")} />
+            <FeaturedRow title="New Releases" icon={<Sparkles className="w-4 h-4" />} items={homeData.newReleases} onPlay={onPlay} homeStyle onSeeAll={() => setLocation("/browse?new")} />
           )}
 
           {/* ── GOOGLE ADSENSE BANNER ── */}
@@ -969,24 +971,24 @@ function HomeTab({ onPlay, onSelectDrama, onSubscribeClick, isSubscribed }: {
           {!isSubscribed && <SubscribeBanner onSubscribeClick={onSubscribeClick} />}
 
           {homeData.topRated?.length > 0 && (
-            <ContentRow title="Top Rated Movies" icon={<Star className="w-4 h-4" />} items={homeData.topRated} onPlay={onPlay} size="lg" onSeeAll={() => setLocation("/browse?top-rated")} />
+            <ContentRow title="Top Rated Movies" icon={<Star className="w-4 h-4" />} items={homeData.topRated} onPlay={onPlay} size="lg" homeStyle onSeeAll={() => setLocation("/browse?top-rated")} />
           )}
           {homeData.tvShows?.length > 0 && (
-            <FeaturedRow title="Popular TV Shows" icon={<Tv className="w-4 h-4" />} items={homeData.tvShows.slice(0, 10)} onPlay={onPlay} onSeeAll={() => setLocation("/browse?tv")} />
+            <FeaturedRow title="Popular TV Shows" icon={<Tv className="w-4 h-4" />} items={homeData.tvShows.slice(0, 10)} onPlay={onPlay} homeStyle onSeeAll={() => setLocation("/browse?tv")} />
           )}
 
           {/* ── SECOND AD BANNER (mid-content) ── */}
           <HomeBannerAd />
 
           {homeData.actionMovies?.length > 0 && (
-            <FeaturedRow title="Action & Adventure" icon={<Flame className="w-4 h-4" />} items={homeData.actionMovies} onPlay={onPlay} onSeeAll={() => setLocation("/browse?action")} />
+            <FeaturedRow title="Action & Adventure" icon={<Flame className="w-4 h-4" />} items={homeData.actionMovies} onPlay={onPlay} homeStyle onSeeAll={() => setLocation("/browse?action")} />
           )}
           
           {/* ── SECOND GOOGLE ADSENSE BANNER ── */}
           <GoogleAdsenseBanner />
 
           {homeData.dramaShows?.length > 0 && (
-            <FeaturedRow title="Drama Series" icon={<Film className="w-4 h-4" />} items={homeData.dramaShows} onPlay={onPlay} onSeeAll={() => setLocation("/browse?drama-series")} />
+            <FeaturedRow title="Drama Series" icon={<Film className="w-4 h-4" />} items={homeData.dramaShows} onPlay={onPlay} homeStyle onSeeAll={() => setLocation("/browse?drama-series")} />
           )}
 
           {/* ── THIRD AD BANNER (bottom) ── */}
