@@ -7,7 +7,7 @@ import {
   setBaseUrl,
 } from "./lib/api-client";
 
-setBaseUrl(import.meta.env.VITE_API_URL || "https://flipshorts.app");
+setBaseUrl(import.meta.env.VITE_API_URL || "http://localhost:3000");
 
 setAuthTokenGetter(() =>
   localStorage.getItem("appAccessToken")
