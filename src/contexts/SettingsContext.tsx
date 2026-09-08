@@ -88,7 +88,18 @@ export interface AppSettings {
   currencyPosition: 'before' | 'after';
   decimalPlaces: number;
   // Storage
-  storageDriver: 'local' | 'bunny';
+  storageDriver: 'local' | 's3' | 'digitalocean' | 'bunny';
+  awsAccessKeyId: string;
+  awsSecretAccessKey: string;
+  awsRegion: string;
+  awsBucket: string;
+  awsPathStyleEndpoint: boolean;
+  doAccessKey: string;
+  doSecretKey: string;
+  doRegion: string;
+  doBucket: string;
+  doCdnUrl: string;
+  doPathStyle: boolean;
   bunnyStorageZone: string;
   bunnyAccessKey: string;
   bunnyCdnUrl: string;
@@ -204,6 +215,17 @@ const DEFAULT: AppSettings = {
   decimalPlaces: 2,
   // Storage
    storageDriver: 'local',
+   awsAccessKeyId: "",
+   awsSecretAccessKey: "",
+   awsRegion: "",
+   awsBucket: "",
+   awsPathStyleEndpoint: false,
+   doAccessKey: "",
+   doSecretKey: "",
+   doRegion: "nyc3",
+   doBucket: "",
+   doCdnUrl: "",
+   doPathStyle: true,
    bunnyStorageZone: "",
   bunnyAccessKey: "",
   bunnyCdnUrl: "",
@@ -323,6 +345,17 @@ function mapApiData(api: any): AppSettings {
     decimalPlaces: api.decimalPlaces ?? DEFAULT.decimalPlaces,
     // Storage
      storageDriver: api.storageDriver || DEFAULT.storageDriver,
+     awsAccessKeyId: api.awsAccessKeyId || "",
+     awsSecretAccessKey: api.awsSecretAccessKey || "",
+     awsRegion: api.awsRegion || "",
+     awsBucket: api.awsBucket || "",
+     awsPathStyleEndpoint: api.awsPathStyleEndpoint || false,
+     doAccessKey: api.doAccessKey || "",
+     doSecretKey: api.doSecretKey || "",
+     doRegion: api.doRegion || "nyc3",
+     doBucket: api.doBucket || "",
+     doCdnUrl: api.doCdnUrl || "",
+     doPathStyle: api.doPathStyle ?? true,
      bunnyStorageZone: api.bunnyStorageZone || "",
     bunnyAccessKey: api.bunnyAccessKey || "",
     bunnyCdnUrl: api.bunnyCdnUrl || "",

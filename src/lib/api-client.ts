@@ -26,11 +26,6 @@ export const getImageUrl = (filePath) => {
   if (!filePath) return "";
 
   if (filePath.startsWith("http")) {
-    // Convert legacy S3 URLs to local server paths
-    const s3Match = filePath.match(/amazonaws\.com\/(.+)$/);
-    if (s3Match) {
-      return `${baseUrl}/${s3Match[1]}`;
-    }
     return filePath;
   }
 

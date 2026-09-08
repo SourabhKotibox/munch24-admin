@@ -551,12 +551,12 @@ export default function Settings() {
 
   // ── Storage Settings ───────────────────────────────────────────────────
    const [storage, setStorage] = useState({
-     localStorage: ctxSettings.storageDriver === 'local',
+     driver: ctxSettings.storageDriver || 'local',
    });
 
    useEffect(() => {
      setStorage({
-       localStorage: ctxSettings.storageDriver === 'local',
+       driver: ctxSettings.storageDriver || 'local',
      });
    }, [
      ctxSettings.storageDriver,
@@ -565,21 +565,19 @@ export default function Settings() {
    const handleSaveStorage = async () => {
      setSaving(true);
      try {
-      const driver: 'local' | 'bunny' = storage.localStorage ? 'local' : 'bunny';
-
-      await updateSettingsMutation.mutateAsync({
-        storageDriver: driver,
-      });
-      updateCtx({
-        storageDriver: driver,
-      });
-      await refreshSettings();
-      toast({ title: "Storage settings saved!" });
-    } catch (err: any) {
-      toast({ title: err?.message || "Save failed", variant: "destructive" });
-    } finally {
-      setSaving(false);
-    }
+       await updateSettingsMutation.mutateAsync({
+         storageDriver: storage.driver,
+       });
+       updateCtx({
+         storageDriver: storage.driver,
+       });
+       await refreshSettings();
+       toast({ title: "Storage settings saved!" });
+     } catch (err: any) {
+       toast({ title: err?.message || "Save failed", variant: "destructive" });
+     } finally {
+       setSaving(false);
+     }
    };
 
   // ── SEO Settings ───────────────────────────────────────────────────────
@@ -1376,31 +1374,182 @@ export default function Settings() {
   const renderStorage = () => (
     <div>
       <SectionTitle icon={HardDrive} label="Storage Settings" />
-      <div className="space-y-0 mb-6 rounded-lg border border-border overflow-hidden">
-        {(
-          [
-            { key: "localStorage", label: "Local Storage" },
-          ] as const
-        ).map(({ key, label }, i, arr) => (
-          <div
-            key={key}
-            className={`flex items-center justify-between px-5 py-4 bg-card ${
-              i < arr.length - 1 ? "border-b border-border" : ""
-            }`}
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Label className={labelCls}>Storage Driver</Label>
+          <Select
+            value={storage.driver}
+            onValueChange={(v) => setStorage({ ...storage, driver: v as 'local' | 's3' | 'digitalocean' | 'bunny' })}
           >
-            <span className="text-foreground font-medium">{label}</span>
-            <Switch
-              checked={storage[key]}
-              onCheckedChange={(v) => {
-                setStorage({
-                  ...storage,
-                  localStorage: key === "localStorage" ? v : false,
-                });
-              }}
-              className="data-[state=checked]:bg-primary"
-            />
+            <SelectTrigger className={`${inputCls} h-11`}>
+              <SelectValue placeholder="Select Storage Driver" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover border-border text-foreground">
+              <SelectItem value="local">Local Storage</SelectItem>
+              <SelectItem value="s3">Amazon S3</SelectItem>
+              <SelectItem value="digitalocean">DigitalOcean Spaces</SelectItem>
+              <SelectItem value="bunny">Bunny.net Storage</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {storage.driver === 's3' && (
+          <div className="space-y-4 p-4 rounded-lg border border-border bg-card animate-in fade-in slide-in-from-top-2 duration-300">
+            <p className="text-sm font-semibold text-foreground mb-2">Amazon S3 Configuration</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className={labelCls}>Access Key ID</Label>
+                <Input
+                  value={ctxSettings.awsAccessKeyId}
+                  onChange={(e) => updateCtx({ awsAccessKeyId: e.target.value })}
+                  placeholder="AKIAIOSFODNN7EXAMPLE"
+                  className={inputCls}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className={labelCls}>Secret Access Key</Label>
+                <Input
+                  type="password"
+                  value={ctxSettings.awsSecretAccessKey}
+                  onChange={(e) => updateCtx({ awsSecretAccessKey: e.target.value })}
+                  placeholder="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+                  className={inputCls}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className={labelCls}>Region</Label>
+                <Input
+                  value={ctxSettings.awsRegion}
+                  onChange={(e) => updateCtx({ awsRegion: e.target.value })}
+                  placeholder="us-east-1"
+                  className={inputCls}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className={labelCls}>Bucket Name</Label>
+                <Input
+                  value={ctxSettings.awsBucket}
+                  onChange={(e) => updateCtx({ awsBucket: e.target.value })}
+                  placeholder="my-bucket"
+                  className={inputCls}
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label className={labelCls}>Path Style Endpoint</Label>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={ctxSettings.awsPathStyleEndpoint}
+                    onCheckedChange={(v) => updateCtx({ awsPathStyleEndpoint: v })}
+                    className="data-[state=checked]:bg-primary"
+                  />
+                  <span className="text-sm text-muted-foreground">Enable path-style addressing</span>
+                </div>
+              </div>
+            </div>
           </div>
-        ))}
+        )}
+
+        {storage.driver === 'digitalocean' && (
+          <div className="space-y-4 p-4 rounded-lg border border-border bg-card animate-in fade-in slide-in-from-top-2 duration-300">
+            <p className="text-sm font-semibold text-foreground mb-2">DigitalOcean Spaces Configuration</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className={labelCls}>Access Key</Label>
+                <Input
+                  value={ctxSettings.doAccessKey}
+                  onChange={(e) => updateCtx({ doAccessKey: e.target.value })}
+                  placeholder="DO00XXXXXXXXXXXXXXXXXX"
+                  className={inputCls}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className={labelCls}>Secret Key</Label>
+                <Input
+                  type="password"
+                  value={ctxSettings.doSecretKey}
+                  onChange={(e) => updateCtx({ doSecretKey: e.target.value })}
+                  placeholder="your-secret-key"
+                  className={inputCls}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className={labelCls}>Region</Label>
+                <Select
+                  value={ctxSettings.doRegion}
+                  onValueChange={(v) => updateCtx({ doRegion: v })}
+                >
+                  <SelectTrigger className={`${inputCls} h-11`}>
+                    <SelectValue placeholder="Select Region" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-border text-foreground">
+                    <SelectItem value="nyc3">NYC3</SelectItem>
+                    <SelectItem value="nyc1">NYC1</SelectItem>
+                    <SelectItem value="ams3">AMS3</SelectItem>
+                    <SelectItem value="sgp1">SGP1</SelectItem>
+                    <SelectItem value="fra1">FRA1</SelectItem>
+                    <SelectItem value="blr1">BLR1</SelectItem>
+                    <SelectItem value="sfo2">SFO2</SelectItem>
+                    <SelectItem value="sfo3">SFO3</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className={labelCls}>Bucket Name</Label>
+                <Input
+                  value={ctxSettings.doBucket}
+                  onChange={(e) => updateCtx({ doBucket: e.target.value })}
+                  placeholder="my-space"
+                  className={inputCls}
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label className={labelCls}>CDN URL (optional)</Label>
+                <Input
+                  value={ctxSettings.doCdnUrl}
+                  onChange={(e) => updateCtx({ doCdnUrl: e.target.value })}
+                  placeholder="https://cdn.example.com"
+                  className={inputCls}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {storage.driver === 'bunny' && (
+          <div className="space-y-4 p-4 rounded-lg border border-border bg-card animate-in fade-in slide-in-from-top-2 duration-300">
+            <p className="text-sm font-semibold text-foreground mb-2">Bunny.net Configuration</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className={labelCls}>Storage Zone</Label>
+                <Input
+                  value={ctxSettings.bunnyStorageZone}
+                  onChange={(e) => updateCtx({ bunnyStorageZone: e.target.value })}
+                  placeholder="my-storage-zone"
+                  className={inputCls}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className={labelCls}>Access Key</Label>
+                <Input
+                  type="password"
+                  value={ctxSettings.bunnyAccessKey}
+                  onChange={(e) => updateCtx({ bunnyAccessKey: e.target.value })}
+                  placeholder="bunny-access-key"
+                  className={inputCls}
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label className={labelCls}>CDN URL</Label>
+                <Input
+                  value={ctxSettings.bunnyCdnUrl}
+                  onChange={(e) => updateCtx({ bunnyCdnUrl: e.target.value })}
+                  placeholder="https://my-zone.b-cdn.net"
+                  className={inputCls}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       <SaveBtn saving={saving} onClick={handleSaveStorage} />
     </div>
