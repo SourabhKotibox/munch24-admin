@@ -607,9 +607,24 @@ export default function Settings() {
   const handleSaveStorage = async () => {
     setSaving(true);
     try {
-      await updateSettingsMutation.mutateAsync(storage);
-      updateCtx(storage);
-      await refreshSettings();
+      const savedSettings = await updateSettingsMutation.mutateAsync(storage);
+      updateCtx({
+        storageDriver: savedSettings.storageDriver ?? storage.storageDriver,
+        awsAccessKeyId: savedSettings.awsAccessKeyId ?? storage.awsAccessKeyId,
+        awsSecretAccessKey: savedSettings.awsSecretAccessKey ?? storage.awsSecretAccessKey,
+        awsRegion: savedSettings.awsRegion ?? storage.awsRegion,
+        awsBucket: savedSettings.awsBucket ?? storage.awsBucket,
+        awsPathStyleEndpoint: savedSettings.awsPathStyleEndpoint ?? storage.awsPathStyleEndpoint,
+        doAccessKey: savedSettings.doAccessKey ?? storage.doAccessKey,
+        doSecretKey: savedSettings.doSecretKey ?? storage.doSecretKey,
+        doRegion: savedSettings.doRegion ?? storage.doRegion,
+        doBucket: savedSettings.doBucket ?? storage.doBucket,
+        doCdnUrl: savedSettings.doCdnUrl ?? storage.doCdnUrl,
+        doPathStyle: savedSettings.doPathStyle ?? storage.doPathStyle,
+        bunnyStorageZone: savedSettings.bunnyStorageZone ?? storage.bunnyStorageZone,
+        bunnyAccessKey: savedSettings.bunnyAccessKey ?? storage.bunnyAccessKey,
+        bunnyCdnUrl: savedSettings.bunnyCdnUrl ?? storage.bunnyCdnUrl,
+      });
       toast({ title: "Storage settings saved!" });
     } catch (err: any) {
       toast({ title: err?.message || "Save failed", variant: "destructive" });
