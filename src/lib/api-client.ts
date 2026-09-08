@@ -1716,7 +1716,7 @@ export const recordAdInteraction = async (id: string, action: 'click' | 'impress
 
 // Settings
 export const getSettings = async () => {
-  const response = await api("/settings");
+  const response = await api("/settings", { useAdminToken: true });
   return response.data;
 };
 

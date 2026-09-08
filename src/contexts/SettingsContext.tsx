@@ -499,11 +499,30 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       const data = await getSettings();
       const mapped = mapApiData(data);
+
+      // Preserve locally-cached sensitive fields if the server returned empty values
+      // (happens when the request is unauthenticated and the server strips them).
+      const sensitiveFields = [
+        'doAccessKey', 'doSecretKey', 'doRegion', 'doBucket', 'doCdnUrl',
+        'awsAccessKeyId', 'awsSecretAccessKey', 'awsRegion', 'awsBucket',
+        'bunnyStorageZone', 'bunnyAccessKey', 'bunnyCdnUrl',
+        'mailUsername', 'mailPassword', 'mailHost', 'mailPort',
+        'fcmServerKey', 'fcmSenderId', 'firebaseApiKey', 'firebaseProjectId', 'firebaseAppId',
+      ] as const;
+      let cached: Partial<AppSettings> = {};
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) cached = JSON.parse(raw);
+      } catch {}
+      for (const field of sensitiveFields) {
+        if (!mapped[field] && cached[field]) {
+          (mapped as any)[field] = cached[field];
+        }
+      }
+
       setSettings(mapped);
       persist(mapped);
       applyFavicon(mapped.faviconUrl);
-      applyColorTheme(mapped.colorTheme);
-      applyBodyClasses(mapped.cardStyle, mapped.menuStyle);
       applyColorTheme(mapped.colorTheme);
       applyBodyClasses(mapped.cardStyle, mapped.menuStyle);
     } catch (e) {
