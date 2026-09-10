@@ -21,10 +21,20 @@ export default function MediaPicker({ open, onClose, onSelect, source, accept = 
   const [mode, setMode] = useState<"library" | "upload">("library");
   const [selectedMedia, setSelectedMedia] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ loaded: number; total: number } | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [fileTypeTab, setFileTypeTab] = useState<FileTypeFilter>("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const formatBytes = (bytes: number, decimals = 2) => {
+    if (!+bytes) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+  };
 
   // Derive the accept-based default filter
   const defaultFileType: FileTypeFilter = (() => {
@@ -78,7 +88,9 @@ export default function MediaPicker({ open, onClose, onSelect, source, accept = 
 
         if (!folderId) throw new Error("Failed to create or find folder");
 
-        const result = await uploadMediaFiles(folderId, [selectedMedia.file], source);
+        const result = await uploadMediaFiles(folderId, [selectedMedia.file], source, (progress) => {
+          setUploadProgress(progress);
+        });
         await refetchMedia();
         toast({ title: "File uploaded successfully!" });
 
@@ -98,6 +110,7 @@ export default function MediaPicker({ open, onClose, onSelect, source, accept = 
         toast({ title: "Upload failed", description: error.message, variant: "destructive" });
       } finally {
         setUploading(false);
+        setUploadProgress(null);
       }
     }
   };
@@ -108,6 +121,7 @@ export default function MediaPicker({ open, onClose, onSelect, source, accept = 
     setPreview(null);
     setSearchQuery("");
     setFileTypeTab("all");
+    setUploadProgress(null);
     onClose();
   };
 
@@ -288,27 +302,46 @@ export default function MediaPicker({ open, onClose, onSelect, source, accept = 
 
           {/* Upload mode */}
           {mode === "upload" && (
-            <div className="flex flex-col gap-4 flex-1">
+            <div className="flex flex-col gap-4 flex-1 overflow-y-auto min-h-0 pb-4">
               <div
-                className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                className="shrink-0 min-h-min border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer"
                 onClick={() => !preview && fileInputRef.current?.click()}
               >
                 {preview ? (
                   <div className="space-y-4">
                     {selectedMedia?.file?.type?.startsWith("video") ? (
-                      <video src={preview} className="max-h-52 mx-auto rounded-xl" controls />
+                      <video src={preview + "#t=0.5"} className="max-h-52 mx-auto rounded-xl bg-black" />
                     ) : (
                       <img src={preview} alt="Preview" className="max-h-52 mx-auto rounded-xl object-contain" />
                     )}
                     <p className="text-sm text-foreground/70 font-medium">{selectedMedia?.name}</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => { e.stopPropagation(); setPreview(null); setSelectedMedia(null); }}
-                    >
-                      <X className="h-4 w-4 mr-2" />
-                      Remove
-                    </Button>
+                    {uploading ? (
+                      <div className="w-full max-w-md mx-auto mt-4 space-y-2 text-left bg-muted/30 p-4 rounded-xl border border-border">
+                        <div className="flex justify-between text-sm font-medium">
+                          <span>{uploadProgress?.loaded === uploadProgress?.total && (uploadProgress?.total || 0) > 0 ? "Upload Complete" : "Uploading..."}</span>
+                          <span>{Math.round(((uploadProgress?.loaded || 0) / Math.max(uploadProgress?.total || 1, 1)) * 100)}%</span>
+                        </div>
+                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-primary transition-all duration-300" 
+                            style={{ width: `${((uploadProgress?.loaded || 0) / Math.max(uploadProgress?.total || 1, 1)) * 100}%` }}
+                          />
+                        </div>
+                        <div className="text-xs text-foreground/65 text-center">
+                          {formatBytes(uploadProgress?.loaded || 0)} / {formatBytes(uploadProgress?.total || selectedMedia?.file?.size || 0)} uploaded
+                        </div>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={uploading}
+                        onClick={(e) => { e.stopPropagation(); setPreview(null); setSelectedMedia(null); }}
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Remove
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div>

@@ -1932,13 +1932,14 @@ export const getMediaFilesByFolder = async (folderId: string) => {
   return api(`/media/folders/${folderId}/files`);
 };
 
-export const uploadMediaFiles = async (folderId: string, files: File[], source?: string) => {
+export const uploadMediaFiles = async (folderId: string, files: File[], source?: string, onUploadProgress?: (progress: { loaded: number; total: number }) => void) => {
   const formData = new FormData();
   files.forEach(file => formData.append('file', file));
   if (source) formData.append('source', source);
   return api(`/media/folders/${folderId}/files`, {
     method: 'POST',
     body: formData,
+    onUploadProgress,
   });
 };
 
@@ -2210,8 +2211,8 @@ export const useGetMediaFilesByFolder = (folderId?: string) => {
 
 export const useUploadMediaFiles = () => {
   const queryClient = useQueryClient();
-  return useMutation<any, Error, { folderId: string; files: File[]; source?: string }>({
-    mutationFn: ({ folderId, files, source }) => uploadMediaFiles(folderId, files, source),
+  return useMutation<any, Error, { folderId: string; files: File[]; source?: string; onUploadProgress?: (progress: { loaded: number; total: number }) => void }>({
+    mutationFn: ({ folderId, files, source, onUploadProgress }) => uploadMediaFiles(folderId, files, source, onUploadProgress),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['media-files', variables.folderId] });
       queryClient.invalidateQueries({ queryKey: ['all-media-files'] });
