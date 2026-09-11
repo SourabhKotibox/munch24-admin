@@ -41,6 +41,8 @@ import {
   useCreateMediaFolder,
   getImageUrl,
 } from "@/lib/api-client";
+import UploadProgressCard from "@/components/UploadProgressCard";
+import type { DirectUploadProgress } from "@/lib/directUpload";
 
 const PAGE_LIMIT = 50;
 
@@ -83,6 +85,8 @@ export default function MediaLibraryPage() {
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<DirectUploadProgress | null>(null);
+  const [uploadingName, setUploadingName] = useState<string>("");
 
   // Queries
   const foldersQuery = useGetMediaFolders(selectedFolder || undefined);
@@ -210,10 +214,28 @@ export default function MediaLibraryPage() {
   const uploadSelectedFiles = async (files: File[]) => {
     if (!selectedFolder) return;
     try {
-      await uploadFilesMutation.mutateAsync({ folderId: selectedFolder, files });
+      setUploadingName(files.map((file) => file.name).join(", "));
+      await uploadFilesMutation.mutateAsync({
+        folderId: selectedFolder,
+        files,
+        onUploadProgress: (progress: any) => {
+          setUploadProgress({
+            phase: (progress.phase as DirectUploadProgress["phase"]) || "uploading",
+            loaded: progress.loaded,
+            total: progress.total,
+            percent: progress.percent ?? Math.round((progress.loaded / Math.max(progress.total, 1)) * 100),
+            speedBps: progress.speedBps || 0,
+            remainingSeconds: progress.remainingSeconds ?? null,
+            message: progress.message || "Uploading...",
+          });
+        },
+      });
       toast({ title: `${files.length} file${files.length > 1 ? "s" : ""} uploaded successfully!` });
     } catch (error: any) {
       toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+    } finally {
+      setUploadProgress(null);
+      setUploadingName("");
     }
   };
 
@@ -335,6 +357,10 @@ export default function MediaLibraryPage() {
           )}
         </div>
       </div>
+
+      {uploadProgress && (
+        <UploadProgressCard progress={uploadProgress} fileName={uploadingName} />
+      )}
 
       {/* Tab navigation */}
       <div className="border-b border-border flex gap-6 items-center">
@@ -583,7 +609,12 @@ export default function MediaLibraryPage() {
                     )}
                     <div className="flex items-center justify-between">
                       <p className="text-xs text-muted-foreground">{file.size}</p>
-                      {file.source && (
+                      {file.hlsStatus && file.fileType?.startsWith("video") && (
+                        <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded capitalize">
+                          {file.hlsStatus === "completed" ? "Ready" : file.hlsStatus === "processing" ? "Transcoding" : file.uploadStatus === "uploading" ? "Uploading" : file.hlsStatus}
+                        </span>
+                      )}
+                      {file.source && !file.fileType?.startsWith("video") && (
                         <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded capitalize">
                           {file.source}
                         </span>

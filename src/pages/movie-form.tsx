@@ -16,7 +16,7 @@ import MediaPicker from "@/components/MediaPicker";
 import {
   useGetDirectors, useGetActors, useCreateMovie, useUpdateMovie,
   useGetGenres, useGetLanguagesList, useGetMovieById, useGetCategoriesList,
-  useGetSections, getImageUrl, useGetCountries,
+  useGetSections, getImageUrl, useGetCountries, useMovieProcessingStatus,
 } from "@/lib/api-client";
 
 type Tab = "Movie Details" | "Basic Info" | "Quality Info" | "Subtitle Info" | "SEO Settings";
@@ -89,7 +89,7 @@ export default function MovieForm() {
   const directorsList = (directorsData as any)?.data || [];
   const { data: actorsData } = useGetActors({ page: 1, limit: 200 });
   const actorsList = (actorsData as any)?.data || [];
-  const { data: genresData } = useGetGenres({ page: 1, limit: 100 });
+  const { data: genresData } = useGetGenres({ page: 1, limit: 100, admin: true });
   const genresList = (genresData as any)?.data || [];
   const { data: languagesData } = useGetLanguagesList();
   const languagesList = (languagesData as any)?.data || [];
@@ -105,6 +105,7 @@ export default function MovieForm() {
 
   const { data: movieData } = useGetMovieById(isEdit ? id! : "");
   const movie = (movieData as any)?.data;
+  const { data: processingData } = useMovieProcessingStatus(isEdit ? id! : "", isEdit);
 
   /* ---- Movie Details ---- */
   const [thumbnail, setThumbnail] = useState({ filePath: "", preview: "" });
@@ -1082,6 +1083,17 @@ export default function MovieForm() {
         {activeTab === "Quality Info" && (
           <div className="p-6 space-y-6">
             <SectionHeading title="Video Source" />
+            {isEdit && processingData?.data && (
+              <div className="rounded-xl border border-border bg-muted/10 p-4 text-sm space-y-1">
+                <p><span className="text-muted-foreground">Upload:</span> Complete</p>
+                <p><span className="text-muted-foreground">Transcoding:</span> {processingData.data.processingStatus === "processing" ? "In progress" : processingData.data.processingStatus === "ready" ? "Complete" : processingData.data.processingStatus === "failed" ? "Failed" : processingData.data.processingStatus}</p>
+                <p><span className="text-muted-foreground">CDN:</span> {processingData.data.hlsUrl ? "Available" : "Waiting"}</p>
+                <p><span className="text-muted-foreground">Playback:</span> {processingData.data.isReady ? "Ready" : "Not ready"}</p>
+                {processingData.data.processingError && (
+                  <p className="text-destructive">{processingData.data.processingError}</p>
+                )}
+              </div>
+            )}
             <div className="rounded-xl border border-border bg-muted/10 p-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-1.5">

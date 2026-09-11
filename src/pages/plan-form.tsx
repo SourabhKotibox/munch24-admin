@@ -331,6 +331,10 @@ export default function PlanFormPage() {
         <p className="text-base font-semibold text-foreground">Plan Limits</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
+          {/* Cast */}
+          <LimitToggle label="Video Cast" description="Allow casting to TV and other devices"
+            checked={videoCast} onChange={setVideoCast} />
+
           {/* Ads */}
           <LimitToggle label="Ads" description="Show advertisements to users on this plan"
             checked={ads} onChange={setAds} />
@@ -392,9 +396,9 @@ export default function PlanFormPage() {
       {/* ─── Download Quality Options ─── */}
       <div className="rounded-xl border border-border bg-card p-6 space-y-5">
         <div>
-          <p className="text-base font-semibold text-foreground">Download Quality Options</p>
+          <p className="text-base font-semibold text-foreground">Stream & Download Quality</p>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Select which video qualities subscribers on this plan can download.
+            Select the highest video qualities this plan can stream and download. Lower qualities stay available automatically.
           </p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">

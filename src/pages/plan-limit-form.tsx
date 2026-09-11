@@ -195,6 +195,15 @@ export default function PlanLimitFormPage() {
         <h3 className="text-base font-semibold text-foreground mb-5">Plan Limits</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
+          <div className="flex items-center justify-between h-12 px-4 rounded-lg border border-border bg-card">
+            <span className="text-sm text-foreground font-medium">Video Cast</span>
+            <Switch
+              checked={form.videoCast}
+              onCheckedChange={(v) => set("videoCast", v)}
+              className="data-[state=checked]:bg-primary"
+            />
+          </div>
+
           {/* Ads */}
           <div className="flex items-center justify-between h-12 px-4 rounded-lg border border-border bg-card">
             <span className="text-sm text-foreground font-medium">Ads</span>
@@ -293,7 +302,7 @@ export default function PlanLimitFormPage() {
 
       {/* Download Quality Options */}
       <div className="rounded-xl border border-border bg-card/50 p-6">
-        <h3 className="text-base font-semibold text-foreground mb-5">Download Quality Option</h3>
+        <h3 className="text-base font-semibold text-foreground mb-5">Stream & Download Quality</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {[
             { key: "q480p" as const, label: "480p" },

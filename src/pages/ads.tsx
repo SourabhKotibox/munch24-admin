@@ -21,6 +21,9 @@ type AdRow = {
   adName: string;
   adType: string;
   placement: string;
+  rollType?: string;
+  skipAfterSeconds?: number;
+  midRollAtSeconds?: number[];
   mediaUrl?: string;
   redirectUrl?: string;
   targetContentType?: string;
@@ -38,6 +41,10 @@ const TYPE_CONFIG: Record<string, { label: string; icon: React.ReactNode; color:
 const PLACEMENT_CONFIG: Record<string, { label: string; icon: React.ReactNode }> = {
   Player: { label: "Player", icon: <Monitor className="w-3.5 h-3.5" /> },
   "Home Page": { label: "Home Page", icon: <Home className="w-3.5 h-3.5" /> },
+  Browse: { label: "Browse", icon: <Monitor className="w-3.5 h-3.5" /> },
+  Explore: { label: "Explore", icon: <Monitor className="w-3.5 h-3.5" /> },
+  "Movie Detail": { label: "Movie Detail", icon: <Film className="w-3.5 h-3.5" /> },
+  "Show Detail": { label: "Show Detail", icon: <Film className="w-3.5 h-3.5" /> },
   Banner: { label: "Banner", icon: <Film className="w-3.5 h-3.5" /> },
 };
 
@@ -234,6 +241,10 @@ export default function AdsPage() {
           <option value="all">All Placements</option>
           <option value="Player">Player</option>
           <option value="Home Page">Home Page</option>
+          <option value="Browse">Browse</option>
+          <option value="Explore">Explore</option>
+          <option value="Movie Detail">Movie Detail</option>
+          <option value="Show Detail">Show Detail</option>
           <option value="Banner">Banner</option>
         </select>
 
@@ -364,9 +375,18 @@ export default function AdsPage() {
                 </span>
 
                 {/* Placement */}
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border border-border bg-muted text-muted-foreground w-fit">
-                  {pc?.icon} {pc?.label || ad.placement}
-                </span>
+                <div className="min-w-0">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border border-border bg-muted text-muted-foreground w-fit">
+                    {pc?.icon} {pc?.label || ad.placement}
+                  </span>
+                  {ad.placement === "Player" && (
+                    <p className="text-[10px] text-muted-foreground mt-1 capitalize">
+                      {ad.rollType || "preroll"}
+                      {ad.rollType === "midroll" && ad.midRollAtSeconds?.length ? ` @ ${ad.midRollAtSeconds.join("s, ")}s` : ""}
+                      {ad.skipAfterSeconds != null ? ` · skip ${ad.skipAfterSeconds}s` : ""}
+                    </p>
+                  )}
+                </div>
 
                 {/* Target */}
                 <span className="text-muted-foreground text-sm truncate">{ad.targetContentType || "—"}</span>

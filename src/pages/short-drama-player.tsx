@@ -8,13 +8,15 @@ import {
 import Hls from "hls.js";
 import { 
   useGetWebDetail, getImageUrl, useGetWishlist, useToggleWishlist, 
-  useGetPublicAds, useGetWebSubscriptionPlans, useCreateSubscription, 
+  useGetWebSubscriptionPlans, useCreateSubscription, 
   useGetAppProfile, useRequestDownload, useToggleLike, useRecordShare, useRecordView,
   useGetDownloads, useRemoveDownload, cacheDownloadedVideo, useUnlockEpisode
 } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import SubscriptionPlansModal from "@/components/SubscriptionPlansModal";
-import { PlayerPrerollAd } from "@/components/AdComponents";
+import { PlayerAdOverlay, ScreenAd } from "@/components/AdComponents";
+import { usePlayerAdBreaks } from "@/lib/adPlayback";
+import { useSettings } from "@/contexts/SettingsContext";
 
 type Tab = "home" | "movies" | "tvshows" | "drama" | "new";
 
@@ -61,16 +63,20 @@ export default function ShortDramaPlayer() {
   const [volume, setVolume] = useState(0.8);
   const [showEpList, setShowEpList] = useState(false);
 
-  const [showPreroll, setShowPreroll] = useState(() => {
-    try {
-      const storedUser = localStorage.getItem("appUser");
-      if (storedUser) {
-        const u = JSON.parse(storedUser);
-        return u.subscriptionStatus !== "active";
-      }
-    } catch(e) {}
-    return true; // Default to showing preroll if no user
+  const { settings } = useSettings();
+  const pendingNav = useRef<number | null>(null);
+  const {
+    roll: adRoll,
+    activeAd,
+    isLoading: adsLoading,
+    dismiss: dismissAd,
+    startBetween,
+  } = usePlayerAdBreaks({
+    targetContentType: "Short Dramas",
+    currentTime,
+    duration,
   });
+  const adActive = !!(adRoll && (activeAd || (adRoll === "preroll" && settings?.vastPrerollUrl) || (adRoll === "midroll" && settings?.vastMidrollUrl)));
 
   const epNumInt = parseInt(epNum || "1", 10);
   const [currentEpNum, setCurrentEpNum] = useState(epNumInt);
@@ -99,15 +105,6 @@ export default function ShortDramaPlayer() {
       setCurrentEpNum(routeEp);
     }
   }, [epNum]);
-
-  const getPlanLevel = (plan?: string) => {
-    switch (plan?.toLowerCase()) {
-      case "premium": return 3;
-      case "standard": return 2;
-      case "basic": return 1;
-      default: return 0;
-    }
-  };
 
   const { data: detailData, isLoading } = useGetWebDetail(id || "");
   const show = (detailData as any)?.content || detailData;
@@ -180,7 +177,7 @@ export default function ShortDramaPlayer() {
     }
 
     v.currentTime = 0;
-    const isPreroll = showPreroll;
+    const isPreroll = adRoll === "preroll" && adActive;
 
     if (videoSrc.includes(".m3u8") && Hls.isSupported()) {
       hls = new Hls({ startLevel: -1 });
@@ -252,12 +249,37 @@ export default function ShortDramaPlayer() {
     setMuted(next);
   };
 
-  const goToEpisode = (n: number) => {
+  const applyEpisode = (n: number) => {
     if (n < 0 || n > totalEps) return;
-    const ep = n === 0 ? null : apiEpisodes[n - 1];
     setCurrentEpNum(n);
     setLocation(`/drama/${id}/episode/${n}`, { replace: true });
   };
+
+  const goToEpisode = (n: number) => {
+    if (n < 0 || n > totalEps || n === currentEpNum) return;
+    if (n > currentEpNum && startBetween()) {
+      pendingNav.current = n;
+      videoRef.current?.pause();
+      return;
+    }
+    applyEpisode(n);
+  };
+
+  useEffect(() => {
+    if (adsLoading) return;
+    if (adRoll === "preroll" && !activeAd && !settings?.vastPrerollUrl) dismissAd();
+    if (adRoll === "midroll" && !activeAd && !settings?.vastMidrollUrl) dismissAd();
+    if ((adRoll === "between" || adRoll === "postroll") && !activeAd) {
+      const next = pendingNav.current;
+      pendingNav.current = null;
+      dismissAd();
+      if (next != null) applyEpisode(next);
+    }
+  }, [adsLoading, adRoll, activeAd, settings?.vastPrerollUrl, settings?.vastMidrollUrl]);
+
+  useEffect(() => {
+    if (adActive) videoRef.current?.pause();
+  }, [adActive]);
 
   const seekPct = duration > 0 ? (currentTime / duration) * 100 : 0;
   const VolumeIcon = muted || volume === 0 ? VolumeX : Volume2;
@@ -318,6 +340,7 @@ export default function ShortDramaPlayer() {
       {/* Left side: Show info (desktop only, when not expanded) */}
       {!isExpanded && (
         <div className="hidden xl:flex flex-col gap-6 mr-10 w-72 flex-shrink-0 bg-zinc-950/40 border border-zinc-900 p-5 rounded-2xl backdrop-blur-md shadow-xl max-h-[85vh] overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+          <ScreenAd placement="Explore" compact />
           <div>
             <span className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 bg-red-500/10 border border-red-500/30 text-red-500 rounded-full mb-3 inline-block">Short Drama</span>
             <h2 className="text-white font-black text-2xl leading-tight tracking-tight">{show?.title || "Drama"}</h2>
@@ -760,18 +783,26 @@ export default function ShortDramaPlayer() {
           </div>
         )}
 
-        {/* ── PRE-ROLL AD OVERLAY ── */}
-        {showPreroll && (
+        {(adActive || (adsLoading && adRoll === "preroll")) && (
           <div className="absolute inset-0 z-[400] bg-black rounded-2xl overflow-hidden">
-            <PlayerPrerollAd onFinished={() => {
-              setShowPreroll(false);
-              // Start playing the actual video after ad finishes
-              const v = videoRef.current;
-              if (v) {
-                v.play().catch(() => {});
-                setPlaying(true);
-              }
-            }} />
+            <PlayerAdOverlay
+              ad={activeAd}
+              vastUrl={!activeAd && adRoll === "midroll" ? settings?.vastMidrollUrl : !activeAd ? settings?.vastPrerollUrl : undefined}
+              label={adRoll === "between" ? "Up next" : adRoll === "midroll" ? "Mid-roll" : adRoll === "postroll" ? "Post-roll" : "Pre-roll"}
+              onFinished={() => {
+                const next = pendingNav.current;
+                pendingNav.current = null;
+                dismissAd();
+                if (next != null) applyEpisode(next);
+                else {
+                  const v = videoRef.current;
+                  if (v) {
+                    v.play().catch(() => {});
+                    setPlaying(true);
+                  }
+                }
+              }}
+            />
           </div>
         )}
       </div>

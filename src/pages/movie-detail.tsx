@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { PublicHeader, PublicFooter } from "@/pages/streaming-home";
 import SubscriptionPlansModal from "@/components/SubscriptionPlansModal";
 import { PortraitCard, LandscapeCard } from "@/components/ContentCard";
+import { isContentLockedForUser } from "@/lib/planAccess";
+import { ScreenAd } from "@/components/AdComponents";
 
 /* ─────────────────────────────────────────────
    MAIN PAGE
@@ -91,18 +93,8 @@ export default function MovieDetailPage() {
 
   const isPremium = item.badge === "TOP" || item.badge === "EXCLUSIVE";
 
-  const getPlanLevel = (plan?: string) => {
-    switch (plan?.toLowerCase()) {
-      case "premium": return 3;
-      case "standard": return 2;
-      case "basic": return 1;
-      default: return 0;
-    }
-  };
-
-  const userPlan = user?.subscriptionStatus === "active" ? user.subscriptionPlan : "free";
   const planRequired = item?.planRequired || "free";
-  const isLocked = getPlanLevel(userPlan) < getPlanLevel(planRequired);
+  const isLocked = item.isLocked ?? isContentLockedForUser(user, planRequired);
 
   const heroBg = getImageUrl(item.backdrop || item.poster || item.posterImage || item.thumbnail) || "";
   const posterImg = getImageUrl(item.poster || item.posterImage || item.thumbnail || item.backdrop) || "";
@@ -608,6 +600,10 @@ export default function MovieDetailPage() {
           </div>
         </div>
       )}
+
+      <div className="px-6 sm:px-10 lg:px-16">
+        <ScreenAd placement="Movie Detail" compact />
+      </div>
 
       {/* ══════════════════════════════════════════
           3. MORE LIKE THIS

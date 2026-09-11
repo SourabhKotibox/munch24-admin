@@ -481,7 +481,7 @@ function Hero({ activeTab, onPlay, onSubscribeClick, isSubscribed }: { activeTab
 
 /* ─── GENRE FILTER ─── */
 function GenreFilter({ active, onChange }: { active: string; onChange: (g: string) => void }) {
-  const { data: genresData } = useGetGenres({ limit: 50 });
+  const { data: genresData } = useGetGenres({ limit: 50, admin: true });
   const genres: string[] = ["All", ...((genresData?.data || []).map((g: any) => g.name))];
 
   return (
@@ -1806,14 +1806,13 @@ export default function StreamingHomePage() {
   }, [setLocation]);
 
   const handlePlay = useCallback((item: any) => {
-    // Show pre-roll ad before navigation (only for non-subscribers)
-    if (hasPlayerAds && !isSubscribed) {
+    if (hasPlayerAds) {
       setPendingPlay(item);
       setShowPreroll(true);
     } else {
       navigateToContent(item);
     }
-  }, [hasPlayerAds, isSubscribed, navigateToContent]);
+  }, [hasPlayerAds, navigateToContent]);
 
   const handlePrerollFinished = useCallback(() => {
     setShowPreroll(false);
@@ -1825,13 +1824,13 @@ export default function StreamingHomePage() {
 
   const handleSelectDrama = useCallback((drama: any) => {
     const id = drama.id || drama._id;
-    if (hasPlayerAds && !isSubscribed) {
+    if (hasPlayerAds) {
       setPendingPlay({ ...drama, contentType: 'drama', trailerUrl: drama.trailerUrl });
       setShowPreroll(true);
     } else {
       setLocation(drama.trailerUrl ? `/drama/${id}/episode/0` : `/drama/${id}/episode/1`);
     }
-  }, [hasPlayerAds, isSubscribed, setLocation]);
+  }, [hasPlayerAds, setLocation]);
 
   return (
     <div className="min-h-screen bg-[#030306] font-sans selection:bg-red-600/30 text-white pb-20 sm:pb-0">

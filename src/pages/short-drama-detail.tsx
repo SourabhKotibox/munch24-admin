@@ -34,8 +34,10 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   useGetContentById, useAppendContentVideo, useUpdateContentEpisodeLock,
-  useDeleteEpisode, getImageUrl,
+  useDeleteEpisode, getImageUrl, getMediaFolders, createMediaFolder,
 } from "@/lib/api-client";
+import UploadProgressCard from "@/components/UploadProgressCard";
+import type { DirectUploadProgress } from "@/lib/directUpload";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -91,9 +93,8 @@ function AddSeasonForm({
   const [videoUrl, setVideoUrl] = useState("");
   const [durationError, setDurationError] = useState("");
   const [freeEp, setFreeEp] = useState(1);
-  const [progress, setProgress] = useState(0);
-  const [speed, setSpeed] = useState("");
-  const startRef = useRef<number | null>(null);
+  const [progress, setProgress] = useState<DirectUploadProgress | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const validateVideoDuration = (file: File): Promise<boolean> =>
     new Promise((resolve) => {
@@ -135,30 +136,34 @@ function AddSeasonForm({
     fd.append("freeEpisodeCount", String(freeEp));
     fd.append("lockEpisodes", "true");
     fd.append("season", String(nextSeason));
-    if (videoMode === "url") fd.append("videoUrl", videoUrl);
-    else if (videoFile) fd.append("videoFile", videoFile);
 
     try {
-      startRef.current = null;
-      await appendMutation.mutateAsync({
-        contentId,
-        data: fd,
-        onUploadProgress: (p: any) => {
-          if (!startRef.current) startRef.current = Date.now();
-          const pct = p.total ? Math.round((p.loaded / p.total) * 100) : 0;
-          const bps = ((Date.now() - (startRef.current || Date.now())) / 1000) > 0
-            ? p.loaded / ((Date.now() - (startRef.current!)) / 1000) : 0;
-          setProgress(pct);
-          setSpeed(bps > 1024 * 1024 ? `${(bps / 1024 / 1024).toFixed(1)} MB/s` : `${(bps / 1024).toFixed(0)} KB/s`);
-        },
-      });
+      setUploading(true);
+      let resolvedUrl = videoUrl;
+      if (videoMode === "upload" && videoFile) {
+        const { uploadFilesDirect } = await import("@/lib/directUpload");
+        const folders = await getMediaFolders();
+        let folderId = folders?.data?.find((f: any) => f.name.toLowerCase() === "short drama")?._id;
+        if (!folderId) {
+          const created = await createMediaFolder("Short Drama");
+          folderId = created?.data?._id;
+        }
+        const uploaded = await uploadFilesDirect(folderId, [videoFile], "short-drama", setProgress);
+        const file = uploaded.data?.[0];
+        resolvedUrl = file?.url || file?.filePath;
+        if (!resolvedUrl) throw new Error("Upload completed but no storage URL was returned");
+      }
+      fd.append("videoUrl", resolvedUrl);
+
+      await appendMutation.mutateAsync({ contentId, data: fd });
       queryClient.invalidateQueries({ queryKey: ["content", contentId] });
       toast({ title: `Season ${nextSeason} added! HLS processing started.` });
       onDone();
     } catch (err: any) {
       toast({ title: err?.message || "Upload failed", variant: "destructive" });
     } finally {
-      setProgress(0); setSpeed("");
+      setUploading(false);
+      setProgress(null);
     }
   };
 
@@ -225,22 +230,14 @@ function AddSeasonForm({
         </div>
       </div>
 
-      {appendMutation.isPending && (
-        <div className="space-y-2">
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Uploading…</span>
-            <span>{progress}%{speed ? ` · ${speed}` : ""}</span>
-          </div>
-          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-            <div className="h-full bg-primary transition-all duration-200" style={{ width: `${progress}%` }} />
-          </div>
-        </div>
+      {(uploading || progress) && progress && (
+        <UploadProgressCard progress={progress} fileName={videoFile?.name} />
       )}
 
       <div className="flex gap-2 pt-1">
-        <Button type="submit" disabled={appendMutation.isPending || !!durationError} className="gap-2 h-9">
-          {appendMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-          {appendMutation.isPending ? "Processing…" : `Add Season ${nextSeason}`}
+        <Button type="submit" disabled={uploading || appendMutation.isPending || !!durationError} className="gap-2 h-9">
+          {uploading || appendMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+          {uploading ? "Uploading…" : appendMutation.isPending ? "Processing…" : `Add Season ${nextSeason}`}
         </Button>
         <Button type="button" variant="outline" onClick={onDone} className="h-9">
           Cancel

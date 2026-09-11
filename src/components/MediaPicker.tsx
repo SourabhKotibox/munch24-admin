@@ -5,6 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useGetAllMediaFiles, uploadMediaFiles, getMediaFolders, createMediaFolder } from "@/lib/api-client";
 import { getImageUrl } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
+import UploadProgressCard from "@/components/UploadProgressCard";
+import type { DirectUploadProgress } from "@/lib/directUpload";
 
 interface MediaPickerProps {
   open: boolean;
@@ -21,20 +23,13 @@ export default function MediaPicker({ open, onClose, onSelect, source, accept = 
   const [mode, setMode] = useState<"library" | "upload">("library");
   const [selectedMedia, setSelectedMedia] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<{ loaded: number; total: number } | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<DirectUploadProgress | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [fileTypeTab, setFileTypeTab] = useState<FileTypeFilter>("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const formatBytes = (bytes: number, decimals = 2) => {
-    if (!+bytes) return '0 Bytes';
-    const k = 1024;
-    const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
-  };
 
   // Derive the accept-based default filter
   const defaultFileType: FileTypeFilter = (() => {
@@ -75,6 +70,8 @@ export default function MediaPicker({ open, onClose, onSelect, source, accept = 
       handleClose();
     } else if (mode === "upload" && selectedMedia?.file) {
       setUploading(true);
+      setUploadError(null);
+      abortRef.current = new AbortController();
       try {
         const folders = await getMediaFolders();
         let folderId = folders?.data?.find((f: any) =>
@@ -88,15 +85,19 @@ export default function MediaPicker({ open, onClose, onSelect, source, accept = 
 
         if (!folderId) throw new Error("Failed to create or find folder");
 
-        const result = await uploadMediaFiles(folderId, [selectedMedia.file], source, (progress) => {
-          setUploadProgress(progress);
-        });
+        const { uploadFilesDirect } = await import("@/lib/directUpload");
+        const result = await uploadFilesDirect(
+          folderId,
+          [selectedMedia.file],
+          source,
+          (progress) => setUploadProgress(progress),
+          abortRef.current.signal
+        );
         await refetchMedia();
         toast({ title: "File uploaded successfully!" });
 
         const uploadedFile = result?.data?.[0];
         if (uploadedFile) {
-          // Pass the entire uploaded file
           onSelect({
             ...uploadedFile,
             url: getImageUrl(uploadedFile.filePath || uploadedFile.url),
@@ -107,27 +108,32 @@ export default function MediaPicker({ open, onClose, onSelect, source, accept = 
         }
         handleClose();
       } catch (error: any) {
+        setUploadError(error.message);
+        setUploadProgress((prev) => prev ? { ...prev, phase: "failed", message: error.message } : prev);
         toast({ title: "Upload failed", description: error.message, variant: "destructive" });
       } finally {
         setUploading(false);
-        setUploadProgress(null);
       }
     }
   };
 
   const handleClose = () => {
+    abortRef.current?.abort();
     setMode("library");
     setSelectedMedia(null);
     setPreview(null);
     setSearchQuery("");
     setFileTypeTab("all");
     setUploadProgress(null);
+    setUploadError(null);
+    setUploading(false);
     onClose();
   };
 
-  const filteredMedia = allMedia.filter((media: any) =>
-    !searchQuery || media.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredMedia = allMedia.filter((media: any) => {
+    if (String(media.url || "").startsWith("pending://") || media.uploadStatus === "uploading") return false;
+    return !searchQuery || media.name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   const showFileTypeTabs = defaultFileType === "all";
 
@@ -315,21 +321,22 @@ export default function MediaPicker({ open, onClose, onSelect, source, accept = 
                       <img src={preview} alt="Preview" className="max-h-52 mx-auto rounded-xl object-contain" />
                     )}
                     <p className="text-sm text-foreground/70 font-medium">{selectedMedia?.name}</p>
-                    {uploading ? (
-                      <div className="w-full max-w-md mx-auto mt-4 space-y-2 text-left bg-muted/30 p-4 rounded-xl border border-border">
-                        <div className="flex justify-between text-sm font-medium">
-                          <span>{uploadProgress?.loaded === uploadProgress?.total && (uploadProgress?.total || 0) > 0 ? "Upload Complete" : "Uploading..."}</span>
-                          <span>{Math.round(((uploadProgress?.loaded || 0) / Math.max(uploadProgress?.total || 1, 1)) * 100)}%</span>
-                        </div>
-                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-primary transition-all duration-300" 
-                            style={{ width: `${((uploadProgress?.loaded || 0) / Math.max(uploadProgress?.total || 1, 1)) * 100}%` }}
-                          />
-                        </div>
-                        <div className="text-xs text-foreground/65 text-center">
-                          {formatBytes(uploadProgress?.loaded || 0)} / {formatBytes(uploadProgress?.total || selectedMedia?.file?.size || 0)} uploaded
-                        </div>
+                    {uploading || uploadProgress || uploadError ? (
+                      <div className="w-full max-w-md mx-auto mt-4" onClick={(e) => e.stopPropagation()}>
+                        <UploadProgressCard
+                          progress={uploadProgress || {
+                            phase: uploadError ? "failed" : "preparing",
+                            loaded: 0,
+                            total: selectedMedia?.file?.size || 0,
+                            percent: 0,
+                            speedBps: 0,
+                            remainingSeconds: null,
+                            message: uploadError || "Preparing upload",
+                          }}
+                          error={uploadError || undefined}
+                          onCancel={uploading ? () => abortRef.current?.abort() : undefined}
+                          onRetry={uploadError ? () => handleConfirm() : undefined}
+                        />
                       </div>
                     ) : (
                       <Button

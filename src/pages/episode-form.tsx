@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   useGetContentList, useGetSeasonList,
   useGetEpisodeById, useCreateEpisode, useUpdateEpisode,
-  useGetLanguagesList, getImageUrl
+  useGetLanguagesList, getImageUrl, useEpisodeProcessingStatus
 } from "@/lib/api-client";
 import MediaPicker from "@/components/MediaPicker";
 
@@ -114,6 +114,7 @@ export default function EpisodeForm() {
   const { data: showsData, isLoading: loadingShows } = useGetContentList({ contentType: isShortDramaRoute ? "drama" : "series", limit: 200 });
   const { data: seasonsData } = useGetSeasonList(showId ? { contentId: showId } : {});
   const { data: existingEpisode, isLoading: loadingEpisode } = useGetEpisodeById(isEdit ? id : "");
+  const { data: processingData } = useEpisodeProcessingStatus(isEdit ? id! : "", isEdit);
   const { data: languagesData } = useGetLanguagesList();
   const languagesList = (languagesData as any)?.data || [];
   const createMutation = useCreateEpisode();
@@ -529,6 +530,18 @@ export default function EpisodeForm() {
                 className="bg-muted border-border text-foreground placeholder:text-muted-foreground rounded-lg text-sm resize-none"
               />
             </div>
+
+            {isEdit && processingData?.data && (
+              <div className="rounded-xl border border-border bg-muted/10 p-4 text-sm space-y-1">
+                <p><span className="text-muted-foreground">Upload:</span> Complete</p>
+                <p><span className="text-muted-foreground">Transcoding:</span> {processingData.data.processingStatus === "processing" ? "In progress" : processingData.data.processingStatus === "ready" ? "Complete" : processingData.data.processingStatus}</p>
+                <p><span className="text-muted-foreground">CDN:</span> {processingData.data.hlsUrl ? "Available" : "Waiting"}</p>
+                <p><span className="text-muted-foreground">Playback:</span> {processingData.data.playbackReady ? "Ready" : "Not ready"}</p>
+                {processingData.data.processingError && (
+                  <p className="text-destructive">{processingData.data.processingError}</p>
+                )}
+              </div>
+            )}
 
             {/* Video Source */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

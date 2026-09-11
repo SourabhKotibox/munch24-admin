@@ -156,6 +156,20 @@ export default function GoogleAdsPage() {
                 />
                 <p className="text-xs text-muted-foreground mt-1">Provide a VAST URL to show automated pre-roll ads in the video player before content starts.</p>
               </div>
+              <div className="space-y-2">
+                <Label className="text-muted-foreground flex items-center gap-2">
+                  <MonitorPlay className="w-4 h-4 text-purple-500" />
+                  VAST Mid-roll URL
+                </Label>
+                <Input
+                  name="vastMidrollUrl"
+                  value={formData.vastMidrollUrl}
+                  onChange={handleChange}
+                  placeholder="https://..."
+                  className="bg-background border-border text-foreground"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Used at mid-roll cue points when no manual mid-roll creative is set.</p>
+              </div>
             </div>
           </div>
         </div>

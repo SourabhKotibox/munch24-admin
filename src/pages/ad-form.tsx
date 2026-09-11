@@ -3,7 +3,7 @@ import { useLocation, useParams } from "wouter";
 import {
   ChevronLeft, Play, Image as ImageIcon, Code2, Monitor, Home,
   Film, Globe, HardDrive, Link2, ExternalLink, Calendar, Tag,
-  Loader2, Check, Upload, Eye, EyeOff,
+  Loader2, Check, Upload, Eye, EyeOff, Search, Smartphone, Clapperboard, Tv,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateAd, useUpdateAd, useGetAds, useGetContentList, getImageUrl } from "@/lib/api-client";
@@ -17,9 +17,20 @@ const AD_TYPES = [
 ];
 
 const PLACEMENTS = [
-  { value: "Player", label: "Video Player", icon: <Monitor className="w-5 h-5" />, desc: "Pre-roll or mid-roll in player" },
+  { value: "Player", label: "Video Player", icon: <Monitor className="w-5 h-5" />, desc: "Pre-roll, mid-roll, post-roll, between reels" },
   { value: "Home Page", label: "Home Page", icon: <Home className="w-5 h-5" />, desc: "Shown on the streaming home" },
+  { value: "Browse", label: "Browse", icon: <Search className="w-5 h-5" />, desc: "Movies, shows, and category grids" },
+  { value: "Explore", label: "Explore / Reels", icon: <Smartphone className="w-5 h-5" />, desc: "Short-drama reel screens" },
+  { value: "Movie Detail", label: "Movie Detail", icon: <Clapperboard className="w-5 h-5" />, desc: "Movie information page" },
+  { value: "Show Detail", label: "Show Detail", icon: <Tv className="w-5 h-5" />, desc: "Series and episode pages" },
   { value: "Banner", label: "Banner", icon: <Film className="w-5 h-5" />, desc: "Full-width banner overlay" },
+];
+
+const ROLL_TYPES = [
+  { value: "preroll", label: "Pre-roll", desc: "Before playback starts" },
+  { value: "midroll", label: "Mid-roll", desc: "At set times during playback" },
+  { value: "postroll", label: "Post-roll", desc: "When the video ends" },
+  { value: "between", label: "Between reels", desc: "After one reel, before the next" },
 ];
 
 function SectionLabel({ label }: { label: string }) {
@@ -56,6 +67,11 @@ export default function AdForm() {
     startDate: new Date().toISOString().split("T")[0],
     endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split("T")[0],
     status: "active",
+    rollType: "preroll",
+    skipEnabled: true,
+    skipAfterSeconds: "5",
+    midRollTimes: "30, 90",
+    durationSeconds: "10",
   });
 
   useEffect(() => {
@@ -74,6 +90,13 @@ export default function AdForm() {
           startDate: ad.startDate ? new Date(ad.startDate).toISOString().split("T")[0] : "",
           endDate: ad.endDate ? new Date(ad.endDate).toISOString().split("T")[0] : "",
           status: ad.status || "active",
+          rollType: ad.rollType || (ad.placement === "Player" ? "preroll" : "display"),
+          skipEnabled: ad.skipEnabled !== false,
+          skipAfterSeconds: String(ad.skipAfterSeconds ?? 5),
+          midRollTimes: Array.isArray(ad.midRollAtSeconds) && ad.midRollAtSeconds.length
+            ? ad.midRollAtSeconds.join(", ")
+            : "30, 90",
+          durationSeconds: String(ad.durationSeconds ?? 10),
         });
       }
     }
@@ -91,12 +114,23 @@ export default function AdForm() {
 
   const handleSave = async () => {
     if (!form.adName.trim()) return toast({ title: "Ad name is required", variant: "destructive" });
+    const payload = {
+      ...form,
+      rollType: form.placement === "Player" ? form.rollType : "display",
+      skipEnabled: !!form.skipEnabled,
+      skipAfterSeconds: Math.max(0, parseInt(form.skipAfterSeconds, 10) || 5),
+      midRollAtSeconds: form.rollType === "midroll"
+        ? form.midRollTimes.split(/[,\s]+/).map((item) => parseInt(item, 10)).filter((item) => Number.isFinite(item) && item > 0)
+        : [],
+      durationSeconds: Math.max(0, parseInt(form.durationSeconds, 10) || 0),
+    };
+    delete (payload as any).midRollTimes;
     try {
       if (isEdit) {
-        await updateMutation.mutateAsync({ id, data: form });
+        await updateMutation.mutateAsync({ id, data: payload });
         toast({ title: "Ad updated successfully" });
       } else {
-        await createMutation.mutateAsync(form);
+        await createMutation.mutateAsync(payload);
         toast({ title: "Ad created successfully" });
       }
       setLocation("/ads");
@@ -189,7 +223,11 @@ export default function AdForm() {
               {PLACEMENTS.map(p => (
                 <button
                   key={p.value}
-                  onClick={() => set("placement", p.value)}
+                  onClick={() => {
+                    set("placement", p.value);
+                    if (p.value === "Player" && form.rollType === "display") set("rollType", "preroll");
+                    if (p.value !== "Player") set("rollType", "display");
+                  }}
                   className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all ${
                     form.placement === p.value
                       ? "border-primary bg-primary/10 text-white"
@@ -208,6 +246,80 @@ export default function AdForm() {
               ))}
             </div>
           </div>
+
+          {form.placement === "Player" && (
+            <div className="bg-card border border-border rounded-2xl p-6">
+              <SectionLabel label="Player Break" />
+              <div className="grid grid-cols-2 gap-2 mb-5">
+                {ROLL_TYPES.map((roll) => (
+                  <button
+                    key={roll.value}
+                    type="button"
+                    onClick={() => set("rollType", roll.value)}
+                    className={`p-3 rounded-xl border-2 text-left transition-all ${
+                      form.rollType === roll.value
+                        ? "border-primary bg-primary/10 text-white"
+                        : "border-border bg-muted/50 text-muted-foreground hover:border-ring"
+                    }`}
+                  >
+                    <p className="font-bold text-sm">{roll.label}</p>
+                    <p className="text-[11px] opacity-70 mt-0.5">{roll.desc}</p>
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm font-bold text-foreground">Allow skip</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Users can skip after the countdown</p>
+                </div>
+                <Switch
+                  checked={form.skipEnabled}
+                  onCheckedChange={(v) => set("skipEnabled", v)}
+                  className="data-[state=checked]:bg-primary"
+                />
+              </div>
+
+              {form.skipEnabled && (
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold text-muted-foreground mb-2">Skip after (seconds)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.skipAfterSeconds}
+                    onChange={(e) => set("skipAfterSeconds", e.target.value)}
+                    className="w-full px-4 py-3 bg-background border border-border text-foreground text-sm rounded-xl focus:outline-none focus:border-ring"
+                  />
+                </div>
+              )}
+
+              {form.rollType === "midroll" && (
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold text-muted-foreground mb-2">Mid-roll times (seconds)</label>
+                  <input
+                    value={form.midRollTimes}
+                    onChange={(e) => set("midRollTimes", e.target.value)}
+                    placeholder="30, 90, 180"
+                    className="w-full px-4 py-3 bg-background border border-border text-foreground text-sm rounded-xl focus:outline-none focus:border-ring placeholder:text-muted-foreground"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">Comma-separated cue points. Leave empty to use the midpoint.</p>
+                </div>
+              )}
+
+              {form.adType !== "Video" && (
+                <div>
+                  <label className="block text-sm font-semibold text-muted-foreground mb-2">Image / custom hold (seconds)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.durationSeconds}
+                    onChange={(e) => set("durationSeconds", e.target.value)}
+                    className="w-full px-4 py-3 bg-background border border-border text-foreground text-sm rounded-xl focus:outline-none focus:border-ring"
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ── MIDDLE COLUMN: Media + URL ── */}

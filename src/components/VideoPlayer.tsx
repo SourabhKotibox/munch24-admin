@@ -26,6 +26,7 @@ interface VideoPlayerProps {
   nextEpisodeTitle?: string;
   nextEpisodePoster?: string;
   onNextEpisode?: () => void;
+  processingStatus?: string;
 }
 
 function formatTime(sec: number): string {
@@ -53,6 +54,7 @@ export default function VideoPlayer({
   nextEpisodeTitle,
   nextEpisodePoster,
   onNextEpisode,
+  processingStatus,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -147,10 +149,13 @@ export default function VideoPlayer({
 
   useEffect(() => () => clearTimeout(hideTimer.current), []);
 
+  const isProcessing = ["queued", "processing", "uploading", "transcoding"].includes(String(processingStatus || ""))
+    || Boolean(processingStatus && !src && processingStatus !== "ready" && processingStatus !== "failed");
+
   // HLS / MP4 setup
   useEffect(() => {
     const v = videoRef.current;
-    if (!v || !currentSrc) return;
+    if (!v || !currentSrc || isProcessing) return;
 
     let hls: Hls | null = null;
     const isM3u8 = currentSrc.includes('.m3u8');
@@ -359,6 +364,13 @@ export default function VideoPlayer({
           onPause={() => setPlaying(false)}
           onClick={togglePlay}
         />
+
+        {isProcessing && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 text-center px-6">
+            <p className="text-lg font-semibold text-white">Processing video</p>
+            <p className="text-sm text-white/70 mt-2">Playback will be available after transcoding finishes.</p>
+          </div>
+        )}
 
         {/* Ad Overlay */}
         {adIsActive && (

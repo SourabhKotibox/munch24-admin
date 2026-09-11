@@ -24,6 +24,7 @@ type ApiOptions = RequestInit & {
 
 export const getImageUrl = (filePath) => {
   if (!filePath) return "";
+  if (String(filePath).startsWith("pending://")) return "";
 
   if (filePath.startsWith("http")) {
     return filePath;
@@ -77,7 +78,8 @@ const api = async (
     finalEndpoint.startsWith("/api/search") ||
     finalEndpoint.startsWith("/search") ||
     finalEndpoint.startsWith("/api/home") ||
-    finalEndpoint.startsWith("/home");
+    finalEndpoint.startsWith("/home") ||
+    finalEndpoint.startsWith("/api/public/ads");
   
   // Choose token based on route prefix, unless explicitly overridden
   const defaultTokenKey = isAppRoute ? "appAccessToken" : "adminAccessToken";
@@ -1627,14 +1629,15 @@ export const useGetAds = (options?: any) => {
   });
 };
 
-export const getPublicAds = async (options?: { placement?: string; targetContentType?: string }) => {
+export const getPublicAds = async (options?: { placement?: string; targetContentType?: string; rollType?: string }) => {
   const params = new URLSearchParams();
   if (options?.placement) params.set('placement', options.placement);
   if (options?.targetContentType) params.set('targetContentType', options.targetContentType);
+  if (options?.rollType) params.set('rollType', options.rollType);
   return api(`/public/ads?${params.toString()}`);
 };
 
-export const useGetPublicAds = (options?: { placement?: string; targetContentType?: string }) => {
+export const useGetPublicAds = (options?: { placement?: string; targetContentType?: string; rollType?: string }) => {
   return useQuery({
     queryKey: ['public-ads', options],
     queryFn: () => getPublicAds(options),
@@ -1932,15 +1935,28 @@ export const getMediaFilesByFolder = async (folderId: string) => {
   return api(`/media/folders/${folderId}/files`);
 };
 
-export const uploadMediaFiles = async (folderId: string, files: File[], source?: string, onUploadProgress?: (progress: { loaded: number; total: number }) => void) => {
-  const formData = new FormData();
-  files.forEach(file => formData.append('file', file));
-  if (source) formData.append('source', source);
-  return api(`/media/folders/${folderId}/files`, {
-    method: 'POST',
-    body: formData,
-    onUploadProgress,
+export const uploadMediaFiles = async (folderId: string, files: File[], source?: string, onUploadProgress?: (progress: { loaded: number; total: number; phase?: string; percent?: number; speedBps?: number; remainingSeconds?: number | null; message?: string }) => void) => {
+  const { uploadFilesDirect } = await import("./directUpload");
+  const result = await uploadFilesDirect(folderId, files, source, (progress) => {
+    onUploadProgress?.({
+      loaded: progress.loaded,
+      total: progress.total,
+      phase: progress.phase,
+      percent: progress.percent,
+      speedBps: progress.speedBps,
+      remainingSeconds: progress.remainingSeconds,
+      message: progress.message,
+    });
   });
+  return { success: true, data: result.data };
+};
+
+export const getMediaFileStatus = async (id: string) => {
+  return api(`/media/files/${id}/status`);
+};
+
+export const applyStorageCors = async () => {
+  return api("/settings/storage/cors", { method: "POST", body: JSON.stringify({}) });
 };
 
 export const deleteMediaFile = async (fileId: string) => {
@@ -2392,6 +2408,24 @@ export const useMovieProcessingStatus = (id: string, enabled = true) => {
       const status = data?.data?.processingStatus;
       if (status === 'ready' || status === 'failed') return false;
       return 5000; // poll every 5 seconds while processing
+    },
+    refetchIntervalInBackground: false,
+  });
+};
+
+export const getEpisodeProcessingStatus = async (id: string) => {
+  return api(`/episodes/${id}/processing-status`);
+};
+
+export const useEpisodeProcessingStatus = (id: string, enabled = true) => {
+  return useQuery({
+    queryKey: ['episode-processing-status', id],
+    queryFn: () => getEpisodeProcessingStatus(id),
+    enabled: !!id && enabled,
+    refetchInterval: (data: any) => {
+      const status = data?.data?.processingStatus;
+      if (status === 'ready' || status === 'failed') return false;
+      return 5000;
     },
     refetchIntervalInBackground: false,
   });

@@ -9,43 +9,13 @@ import {
 import { PublicHeader, PublicFooter } from "./streaming-home";
 import { WebsiteReviews } from "@/components/WebsiteReviews";
 import Hls from "hls.js";
-import { useGetWebSubscriptionPlans, useCreateSubscription, useGetWebDetail, getImageUrl, useGetPublicAds, useGetAppProfile, useToggleLike, useRequestDownload, useRemoveDownload, useGetWishlist, useToggleWishlist, useSaveWatchProgress, useGetWatchProgress, getOfflineVideoUrl, useGetDownloads, cacheDownloadedVideo, removeOfflineVideo, useRecordView, useRecordShare } from "@/lib/api-client";
-import { PlayerPrerollAd } from "@/components/AdComponents";
+import { useGetWebSubscriptionPlans, useCreateSubscription, useGetWebDetail, getImageUrl, useGetAppProfile, useToggleLike, useRequestDownload, useRemoveDownload, useGetWishlist, useToggleWishlist, useSaveWatchProgress, useGetWatchProgress, getOfflineVideoUrl, useGetDownloads, cacheDownloadedVideo, removeOfflineVideo, useRecordView, useRecordShare } from "@/lib/api-client";
+import { PlayerAdOverlay, ScreenAd } from "@/components/AdComponents";
 import { useToast } from "@/hooks/use-toast";
 import { PortraitCard } from "@/components/ContentCard";
-/* ─── AD OVERLAY ─── */
-function AdOverlay({ ad, onSkip }: { ad: any; onSkip: () => void }) {
-  const [countdown, setCountdown] = useState(5);
-
-  useEffect(() => {
-    const timer = setInterval(() => setCountdown((c) => { if (c <= 1) { clearInterval(timer); return 0; } return c - 1; }), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const adSrc = ad.urlType === "URL" ? ad.mediaUrl : getImageUrl(ad.mediaUrl);
-
-  return (
-    <div className="absolute inset-0 z-30 bg-black flex flex-col items-center justify-center">
-      {ad.adType === "Video" ? (
-        <video src={adSrc} className="w-full h-full object-contain" autoPlay onEnded={onSkip} playsInline />
-      ) : ad.adType === "Image" ? (
-        <a href={ad.redirectUrl || "#"} target="_blank" rel="noopener noreferrer" className="w-full h-full flex items-center justify-center">
-          <img src={adSrc} alt={ad.adName} className="max-w-full max-h-full object-contain" />
-        </a>
-      ) : (
-        <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: ad.mediaUrl }} />
-      )}
-      <div className="absolute bottom-4 right-4 flex items-center gap-3">
-        <span className="text-foreground/80 text-xs bg-black/60 px-2 py-1 rounded">Advertisement</span>
-        {countdown > 0 ? (
-          <span className="bg-black/70 text-white text-xs px-3 py-1.5 rounded-lg font-bold border border-zinc-700">Skip in {countdown}s</span>
-        ) : (
-          <button onClick={onSkip} className="bg-white/90 hover:bg-white text-black text-xs font-black px-3 py-1.5 rounded-lg transition-colors">Skip Ad ›</button>
-        )}
-      </div>
-    </div>
-  );
-}
+import { isContentLockedForUser } from "@/lib/planAccess";
+import { mapContentTypeToAdTarget, usePlayerAdBreaks } from "@/lib/adPlayback";
+import { useSettings } from "@/contexts/SettingsContext";
 
 function fmtCount(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -119,6 +89,38 @@ function VideoPlayer({
 
   const recordViewMutation = useRecordView();
   const viewRecordedRef = useRef(false);
+  const { settings } = useSettings();
+  const {
+    roll: adRoll,
+    activeAd,
+    isLoading: adsLoading,
+    dismiss: dismissAd,
+    startPostroll,
+    resetForEpisode,
+  } = usePlayerAdBreaks({
+    targetContentType: mapContentTypeToAdTarget(contentType),
+    currentTime,
+    duration,
+  });
+  const adActive = !!(adRoll && (activeAd || (adRoll === "preroll" && settings?.vastPrerollUrl) || (adRoll === "midroll" && settings?.vastMidrollUrl)));
+
+  useEffect(() => {
+    resetForEpisode();
+  }, [episodeId, contentId]);
+
+  useEffect(() => {
+    if (adActive) videoRef.current?.pause();
+  }, [adActive]);
+
+  useEffect(() => {
+    if (adsLoading) return;
+    if (adRoll === "preroll" && !activeAd && !settings?.vastPrerollUrl) dismissAd();
+    if (adRoll === "midroll" && !activeAd && !settings?.vastMidrollUrl) dismissAd();
+    if (adRoll === "postroll" && !activeAd) {
+      dismissAd();
+      onNext?.();
+    }
+  }, [adsLoading, adRoll, activeAd, settings?.vastPrerollUrl, settings?.vastMidrollUrl, dismissAd, onNext]);
 
   useEffect(() => {
     if (playing && !viewRecordedRef.current && contentId) {
@@ -276,6 +278,7 @@ function VideoPlayer({
       setPlaying(false);
       clearTimeout(hideTimerRef.current);
       setControlsVisible(true);
+      if (startPostroll()) return;
       onNext?.();
     };
     const onTimeUpdate = () => setCurrentTime(v.currentTime);
@@ -506,6 +509,24 @@ function VideoPlayer({
       }}
       onTouchStart={revealControls}
     >
+      {adsLoading && adRoll === "preroll" && !activeAd && (
+        <div className="absolute inset-0 bg-black z-50 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 text-white/50 animate-spin" />
+        </div>
+      )}
+      {adActive && (
+        <PlayerAdOverlay
+          ad={activeAd}
+          vastUrl={!activeAd && adRoll === "midroll" ? settings?.vastMidrollUrl : !activeAd ? settings?.vastPrerollUrl : undefined}
+          label={adRoll === "midroll" ? "Mid-roll" : adRoll === "postroll" ? "Post-roll" : "Pre-roll"}
+          onFinished={() => {
+            const wasPost = adRoll === "postroll";
+            dismissAd();
+            if (wasPost) onNext?.();
+            else videoRef.current?.play().catch(() => {});
+          }}
+        />
+      )}
       {/* Real video element */}
       <video
         ref={videoRef}
@@ -846,7 +867,10 @@ function EpisodeGrid({
         style={{ gridTemplateColumns: "repeat(6, minmax(0, 1fr))", scrollbarWidth: "thin", scrollbarColor: "#3f3f46 transparent" } as React.CSSProperties}
       >
         {cells.map(({ n, isTrailer }) => {
-          const isLocked = !isTrailer && n > freeCount;
+          const cellEp = !isTrailer && apiEpisodes
+            ? apiEpisodes.find((e: any) => e.episode === n || e.episodeNumber === n || e.number === n || e.globalIndex === n)
+            : null;
+          const isLocked = !isTrailer && (cellEp?.isLockedForUser ?? n > freeCount);
           const isActive = n === currentEp;
 
           // Determine download status for this episode/cell
@@ -855,10 +879,7 @@ function EpisodeGrid({
           if (downloads) {
             if (isTrailer) {
               isEpDownloaded = downloads.some((d: any) => !d.episodeId);
-            } else if (apiEpisodes) {
-              const cellEp = apiEpisodes.find(
-                (e: any) => e.episode === n || e.episodeNumber === n || e.number === n
-              );
+            } else if (cellEp) {
               epIdForCell = cellEp?.id || cellEp?._id;
               if (epIdForCell) {
                 isEpDownloaded = downloads.some((d: any) => d.episodeId === epIdForCell);
@@ -1062,23 +1083,7 @@ export default function EpisodeDetailPage() {
   const [, navigate] = useLocation();
 
   const [user, setUser] = useState<any>(null);
-  const [adDismissed, setAdDismissed] = useState(false);
   const [playerStarted, setPlayerStarted] = useState(false);
-
-  const { data: adsData } = useGetPublicAds({ placement: "Player" });
-  const activeAds: any[] = adsData?.data || [];
-  const currentAd = !adDismissed && playerStarted && activeAds.length > 0 ? activeAds[0] : null;
-
-  const [showPreroll, setShowPreroll] = useState(() => {
-    try {
-      const storedUser = localStorage.getItem("appUser");
-      if (storedUser) {
-        const u = JSON.parse(storedUser);
-        return u.subscriptionStatus !== "active";
-      }
-    } catch(e) {}
-    return true; // Default to showing preroll if no user
-  });
 
   useEffect(() => {
     try {
@@ -1270,21 +1275,13 @@ export default function EpisodeDetailPage() {
     }
   }, [user, navigate, downloadItems, contentId, showData, apiEpisodes, removeDownloadMutation, requestDownloadMutation, toast]);
 
-  const getPlanLevel = (plan?: string) => {
-    switch (plan?.toLowerCase()) {
-      case "premium": return 3;
-      case "standard": return 2;
-      case "basic": return 1;
-      default: return 0;
-    }
+  const liveUser = {
+    subscriptionStatus: profileData?.subscriptionStatus || user?.subscriptionStatus,
+    subscriptionExpiry: profileData?.subscriptionExpiry || user?.subscriptionExpiry,
+    subscriptionPlan: profileData?.subscriptionPlan || user?.subscriptionPlan,
   };
-
-  // Use live profileData as source of truth for subscription (avoids stale localStorage)
-  const liveStatus = profileData?.subscriptionStatus || user?.subscriptionStatus;
-  const livePlan   = profileData?.subscriptionPlan   || user?.subscriptionPlan;
-  const userPlan = liveStatus === "active" ? (livePlan || "free") : "free";
   const requiredPlan = showData?.planRequired || "free";
-  const isLockedForContent = getPlanLevel(userPlan) < getPlanLevel(requiredPlan);
+  const isLockedForContent = showData?.isLocked ?? isContentLockedForUser(liveUser, requiredPlan);
 
   const goToEpisode = useCallback((ep: number) => {
     const maxEp = detail.totalEpisodes === 0 ? 1 : detail.totalEpisodes;
@@ -1297,7 +1294,7 @@ export default function EpisodeDetailPage() {
         isLocked = (showData?.isPremium === true || requiredPlan !== "free") && isLockedForContent;
       } else {
         const isEpFree = targetEp ? targetEp.isFree : ep <= detail.freeEpisodes;
-        isLocked = !isEpFree && isLockedForContent;
+        isLocked = targetEp?.isLockedForUser ?? (!isEpFree && isLockedForContent);
       }
     }
     
@@ -1384,6 +1381,8 @@ export default function EpisodeDetailPage() {
             </button>
           </div>
 
+          <ScreenAd placement="Banner" compact />
+
           {/* Player Container */}
           <div
             key={`${title}-ep-${currentEp}`}
@@ -1395,22 +1394,15 @@ export default function EpisodeDetailPage() {
               videoSrc={videoSrc}
               thumbnail={detail.thumbnail}
               autoPlay={autoPlay}
-              onNext={() => { setAdDismissed(false); setPlayerStarted(false); handleNext(); }}
+              onNext={() => { setPlayerStarted(false); handleNext(); }}
               videoSettings={currentEpisode?.videoSettings || showData?.videoSettings}
               contentId={contentId}
               episodeId={currentEpisode?.id || currentEpisode?._id}
               resumeFrom={savedProgress?.progressPercent && savedProgress.progressPercent < 95 ? savedProgress.progressSeconds : undefined}
               contentType={showData?.contentType}
             />
-            {currentAd && <AdOverlay ad={currentAd} onSkip={() => setAdDismissed(true)} />}
-
-            {/* ── PRE-ROLL AD OVERLAY (page-level scope, correct showPreroll access) ── */}
-            {showPreroll && (
-              <div className="absolute inset-0 z-[400] rounded-2xl overflow-hidden">
-                <PlayerPrerollAd onFinished={() => setShowPreroll(false)} />
-              </div>
-            )}
           </div>
+          <ScreenAd placement="Show Detail" />
 
           {/* Details and Content Blocks */}
           <div className="space-y-6">
@@ -1613,7 +1605,7 @@ export default function EpisodeDetailPage() {
                     .filter((ep) => (ep.season || 1) === selectedSeason)
                     .map((ep) => {
                       const isActive = ep.globalIndex === currentEp;
-                      const isLocked = !ep.isFree && isLockedForContent;
+                      const isLocked = ep.isLockedForUser ?? (!ep.isFree && isLockedForContent);
                       const isEpDownloaded = profileData?.downloads?.some((d: any) => d.episodeId === (ep.id || ep._id));
 
                       return (

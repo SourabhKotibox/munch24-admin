@@ -11,6 +11,7 @@ import { PublicHeader, PublicFooter } from "@/pages/streaming-home";
 import { useSettings } from "@/contexts/SettingsContext";
 import SubscriptionPlansModal from "@/components/SubscriptionPlansModal";
 import { PortraitCard } from "@/components/ContentCard";
+import { ScreenAd } from "@/components/AdComponents";
 
 type Tab = "home" | "movies" | "tvshows" | "drama" | "new";
 
@@ -370,6 +371,10 @@ export default function TvShowsPublicPage() {
           );
         })()}
 
+      </div>
+
+      <div className="px-4 sm:px-8 lg:px-14">
+        <ScreenAd placement="Browse" compact />
       </div>
 
       <PublicFooter />

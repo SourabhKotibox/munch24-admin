@@ -8,6 +8,7 @@ import { PublicHeader, PublicFooter } from "./streaming-home";
 import { useGetWebBrowse, useGetGenres } from "@/lib/api-client";
 import SubscriptionPlansModal from "@/components/SubscriptionPlansModal";
 import { PortraitCard } from "@/components/ContentCard";
+import { ScreenAd } from "@/components/AdComponents";
 
 type ContentType = "all" | "movie" | "show" | "drama";
 
@@ -306,6 +307,10 @@ export default function CategoriesBrowsePage() {
               </>
             )}
           </div>
+        </div>
+
+        <div className="px-4 sm:px-8 lg:px-14">
+          <ScreenAd placement="Browse" compact />
         </div>
 
         {/* Content Grid */}

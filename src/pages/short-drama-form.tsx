@@ -85,7 +85,7 @@ export default function ShortDramaForm() {
   const actorsList               = (actorsData as any)?.data || [];
   const { data: crewsData }      = useGetCrews({ page: 1, limit: 500 });
   const crewsList                = (crewsData as any)?.data || [];
-  const { data: genresData }     = useGetGenres({ page: 1, limit: 100 });
+  const { data: genresData }     = useGetGenres({ page: 1, limit: 100, admin: true });
   const genresList               = (genresData as any)?.data || [];
   const { data: languagesData }  = useGetLanguagesList();
   const languagesList            = (languagesData as any)?.data || [];

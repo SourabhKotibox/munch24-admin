@@ -20,10 +20,12 @@ function getPlanFeatures(plan: any): { text: string; icon: any }[] {
   const features: { text: string; icon: any }[] = [];
   
   if (plan.maxDevices > 0) features.push({ text: `${plan.maxDevices} device${plan.maxDevices > 1 ? "s" : ""} at once`, icon: <Smartphone className="w-3.5 h-3.5" /> });
+  if (plan.maxProfiles > 0) features.push({ text: `${plan.maxProfiles} profile${plan.maxProfiles > 1 ? "s" : ""}`, icon: <Users className="w-3.5 h-3.5" /> });
   if (plan.maxResolution) features.push({ text: `Up to ${plan.maxResolution} quality`, icon: <Tv2 className="w-3.5 h-3.5" /> });
   if (plan.downloadEnabled) features.push({ text: "Offline downloads", icon: <Download className="w-3.5 h-3.5" /> });
   if (plan.adFree) features.push({ text: "Ad-free streaming", icon: <Shield className="w-3.5 h-3.5" /> });
-  if (name === "premium" || name === "vip") features.push({ text: "VIP exclusive content", icon: <Crown className="w-3.5 h-3.5" /> });
+  if (plan.videoCast) features.push({ text: "Cast to TV", icon: <Wifi className="w-3.5 h-3.5" /> });
+  if (name.includes("premium") || name.includes("vip")) features.push({ text: "VIP exclusive content", icon: <Crown className="w-3.5 h-3.5" /> });
   
   if (features.length === 0) {
     if (name === "free") return [

@@ -43,7 +43,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useDeleteAccount, useUpdateSettings, useUploadSettingsLogos, useGetEmailStatus, useTestEmail, getImageUrl } from "@/lib/api-client";
+import { useDeleteAccount, useUpdateSettings, useUploadSettingsLogos, useGetEmailStatus, useTestEmail, getImageUrl, applyStorageCors } from "@/lib/api-client";
 import { useSettings, applyColorTheme, applyBodyClasses } from "@/contexts/SettingsContext";
 import { useTheme } from "next-themes";
 import MediaPicker from "@/components/MediaPicker";
@@ -1574,6 +1574,26 @@ export default function Settings() {
                   />
                   <span className="text-sm text-muted-foreground">Enable path-style addressing</span>
                 </div>
+              </div>
+              <div className="md:col-span-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-border"
+                  onClick={async () => {
+                    try {
+                      const result = await applyStorageCors();
+                      toast({ title: result?.data?.message || "Storage CORS updated for browser uploads" });
+                    } catch (error: any) {
+                      toast({ title: "Could not apply Spaces CORS", description: error.message, variant: "destructive" });
+                    }
+                  }}
+                >
+                  Enable browser direct uploads (CORS)
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Required so large movies upload from the admin browser straight to DigitalOcean Spaces. Secrets stay on the server.
+                </p>
               </div>
             </div>
           </div>
