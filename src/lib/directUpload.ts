@@ -52,6 +52,18 @@ const formatPhaseMessage = (phase: UploadPhase) => {
 const resumeKey = (folderId: string, file: File) =>
   `${STORAGE_PREFIX}${folderId}:${file.name}:${file.size}:${file.lastModified}`;
 
+const isDirectUploadUnavailable = (error: any) => {
+  const status = Number(error?.status || 0);
+  const message = String(error?.message || "").toLowerCase();
+  return (
+    status === 404 ||
+    status === 405 ||
+    message.includes("not found") ||
+    message.includes("cannot post") ||
+    message.includes("failed to fetch")
+  );
+};
+
 const apiJson = async (endpoint: string, options: RequestInit = {}) => {
   const res = await fetch(`${apiBase()}/api${endpoint}`, {
     ...options,
@@ -63,7 +75,9 @@ const apiJson = async (endpoint: string, options: RequestInit = {}) => {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(data.error || data.message || "Upload request failed");
+    const error = new Error(data.error || data.message || "Upload request failed") as Error & { status?: number };
+    error.status = res.status;
+    throw error;
   }
   return data;
 };
@@ -205,19 +219,27 @@ const uploadSingleDirect = async (
   emit(onProgress, "preparing", 0, file.size, startedAt);
 
   const storedSessionId = localStorage.getItem(resumeKey(folderId, file)) || undefined;
-  const init = await apiJson("/media/direct-upload/init", {
-    method: "POST",
-    body: JSON.stringify({
-      folderId,
-      fileName: file.name,
-      fileSize: file.size,
-      mimeType: file.type,
-      lastModified: file.lastModified,
-      source,
-      resumeSessionId: storedSessionId,
-    }),
-    signal,
-  });
+  let init: any;
+  try {
+    init = await apiJson("/media/direct-upload/init", {
+      method: "POST",
+      body: JSON.stringify({
+        folderId,
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type,
+        lastModified: file.lastModified,
+        source,
+        resumeSessionId: storedSessionId,
+      }),
+      signal,
+    });
+  } catch (error: any) {
+    if (isDirectUploadUnavailable(error)) {
+      return (await proxyUpload(folderId, [file], source, onProgress, signal)).data[0];
+    }
+    throw error;
+  }
 
   if (init.data?.mode === "proxy") {
     return (await proxyUpload(folderId, [file], source, onProgress, signal)).data[0];
@@ -325,7 +347,13 @@ export const uploadFilesDirect = async (
     } catch (error: any) {
       if (abortSignal.aborted || error?.message === "Upload cancelled") throw error;
       const message = String(error?.message || "").toLowerCase();
-      const canProxy = message.includes("etag") || message.includes("network") || message.includes("cors") || message.includes("failed to fetch");
+      const canProxy =
+        error?.status === 404 ||
+        message.includes("etag") ||
+        message.includes("network") ||
+        message.includes("cors") ||
+        message.includes("not found") ||
+        message.includes("failed to fetch");
       if (canProxy) {
         const stored = localStorage.getItem(resumeKey(folderId, file));
         if (stored) {
