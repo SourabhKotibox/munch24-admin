@@ -91,7 +91,11 @@ export default function PlansPage() {
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
 
-  const toggleStatus = async (id: string, currentStatus: boolean) => {
+  const toggleStatus = async (id: string, currentStatus: boolean, planName?: string) => {
+    if ((planName || "").trim().toLowerCase() === "free") {
+      toast({ title: "Free plan is permanently active", description: "The Free plan cannot be deactivated.", variant: "destructive" });
+      return;
+    }
     await updatePlan.mutateAsync({ id, data: { status: !currentStatus } });
   };
 
@@ -252,9 +256,18 @@ export default function PlansPage() {
                       </p>
                     </TableCell>
                     <TableCell>
-                      <Switch checked={plan.status}
-                        onCheckedChange={() => toggleStatus(plan.id, plan.status)}
-                        className="data-[state=checked]:bg-primary" />
+                      {(() => {
+                        const isFree = (plan.name || "").trim().toLowerCase() === "free";
+                        return (
+                          <Switch
+                            checked={isFree ? true : plan.status}
+                            disabled={isFree}
+                            onCheckedChange={() => toggleStatus(plan.id, plan.status, plan.name)}
+                            className="data-[state=checked]:bg-primary disabled:opacity-60 disabled:cursor-not-allowed"
+                            title={isFree ? "Free plan is permanently active" : undefined}
+                          />
+                        );
+                      })()}
                     </TableCell>
                     <TableCell className="text-right pr-5">
                       <div className="flex items-center justify-end gap-2">
@@ -263,11 +276,13 @@ export default function PlansPage() {
                           title="Edit">
                           <Edit2 className="h-3.5 w-3.5" />
                         </button>
-                        <button onClick={() => setConfirmDelete(plan)}
-                          className="h-8 w-8 flex items-center justify-center rounded-lg bg-primary/15 text-primary hover:bg-primary/80/30 transition-colors"
-                          title="Delete">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        {(plan.name || "").trim().toLowerCase() !== "free" && (
+                          <button onClick={() => setConfirmDelete(plan)}
+                            className="h-8 w-8 flex items-center justify-center rounded-lg bg-primary/15 text-primary hover:bg-primary/80/30 transition-colors"
+                            title="Delete">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

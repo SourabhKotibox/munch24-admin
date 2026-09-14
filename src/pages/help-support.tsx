@@ -1,21 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { Loader2, ArrowLeft, HelpCircle, Mail, MessageSquare, ChevronDown, Search } from "lucide-react";
 import { useGetPublicFAQs } from "@/lib/api-client";
 import { PublicHeader, PublicFooter } from "@/pages/streaming-home";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function HelpSupportPage() {
   const [, setLocation] = useLocation();
-  const [user, setUser] = useState<any>(null);
+  const { user, signOut } = useAuth();
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("appUser");
-      if (stored) setUser(JSON.parse(stored));
-    } catch {}
-  }, []);
 
   const { data: faqsData, isLoading } = useGetPublicFAQs();
   const faqs: any[] = faqsData?.data || [];
@@ -27,12 +21,8 @@ export default function HelpSupportPage() {
   );
 
   const handleSignOut = () => {
-    localStorage.removeItem("appUser");
-    localStorage.removeItem("appAccessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("ott_active_profile");
-    setLocation("/login");
-    window.location.reload();
+    signOut();
+    setLocation("/");
   };
 
   return (

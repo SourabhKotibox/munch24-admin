@@ -4,7 +4,8 @@ import {
   useGetUserById, 
   useUpdateUser, 
   useBanUser,
-  useUnbanUser
+  useUnbanUser,
+  useGetSubscriptionPlans
 } from "../lib/api-client";
 import { Input } from "@/components/ui/input";
 import { useQueryClient } from "@tanstack/react-query";
@@ -46,6 +47,8 @@ export default function UserDetail() {
   const queryClient = useQueryClient();
 
   const { data: user, isLoading } = useGetUserById(id);
+  const { data: plansData } = useGetSubscriptionPlans({ limit: 100 });
+  const catalogPlans: any[] = plansData?.data || [];
 
   const updateMutation = useUpdateUser();
   const banMutation = useBanUser();
@@ -88,6 +91,22 @@ export default function UserDetail() {
 
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const currentPlan = (user?.subscriptionPlan || "free").trim().toLowerCase();
+    const targetPlan = formData.subscriptionPlan.trim().toLowerCase();
+
+    if (targetPlan !== currentPlan && targetPlan !== "free") {
+      const selected = catalogPlans.find((p: any) => p.name.trim().toLowerCase() === targetPlan);
+      if (selected && selected.status === false) {
+        toast({
+          title: "Plan is inactive",
+          description: `The "${selected.name}" plan is currently inactive and cannot be newly assigned.`,
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     updateMutation.mutate({
       id,
       data: {
@@ -105,8 +124,8 @@ export default function UserDetail() {
         queryClient.invalidateQueries({ queryKey: ["users-list"] });
         toast({ title: "User updated successfully" });
       },
-      onError: () => {
-        toast({ title: "Failed to update user", variant: "destructive" });
+      onError: (err: any) => {
+        toast({ title: err?.message || "Failed to update user", variant: "destructive" });
       }
     });
   };
@@ -294,10 +313,39 @@ export default function UserDetail() {
                           <SelectValue placeholder="Select plan" />
                         </SelectTrigger>
                         <SelectContent className="bg-muted border-border text-foreground">
-                          <SelectItem value="free">Free</SelectItem>
-                          <SelectItem value="basic">Basic</SelectItem>
-                          <SelectItem value="standard">Standard</SelectItem>
-                          <SelectItem value="premium">Premium</SelectItem>
+                          {(() => {
+                            const planMap = new Map<string, { name: string; status: boolean }>();
+                            planMap.set("free", { name: "Free", status: true });
+
+                            catalogPlans.forEach((p: any) => {
+                              const key = (p.name || "").trim().toLowerCase();
+                              if (key && key !== "free") {
+                                planMap.set(key, { name: p.name, status: p.status !== false });
+                              }
+                            });
+
+                            // Ensure user's current plan is included in the list even if custom/missing
+                            const userPlanKey = (user?.subscriptionPlan || "free").trim().toLowerCase();
+                            if (!planMap.has(userPlanKey)) {
+                              planMap.set(userPlanKey, { name: user?.subscriptionPlan || "Free", status: true });
+                            }
+
+                            return Array.from(planMap.entries()).map(([key, plan]) => {
+                              const isCurrent = key === userPlanKey;
+                              const isInactive = plan.status === false;
+                              const isDisabled = isInactive && !isCurrent;
+
+                              return (
+                                <SelectItem
+                                  key={key}
+                                  value={key}
+                                  disabled={isDisabled}
+                                >
+                                  {plan.name} {isInactive ? (isCurrent ? "(Inactive - Current)" : "(Inactive)") : ""}
+                                </SelectItem>
+                              );
+                            });
+                          })()}
                         </SelectContent>
                       </Select>
                     </div>

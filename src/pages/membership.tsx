@@ -7,6 +7,7 @@ import {
   openRazorpayCheckout,
 } from "@/lib/api-client";
 import { useSettings } from "@/contexts/SettingsContext";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Crown, Check, ArrowLeft, Sparkles, Shield, Zap, Users, Download,
   Star, Lock, ChevronRight, Loader2, X, Wifi, Tv2, Smartphone, Globe
@@ -92,6 +93,7 @@ function Toast({ msg, type, onClose }: { msg: string; type: "success" | "error";
 export default function MembershipPage() {
   const [, setLocation] = useLocation();
   const { settings } = useSettings();
+  const { user, updateUser } = useAuth();
   const { data: plansData, isLoading } = useGetWebSubscriptionPlans();
   const createOrderMutation = useCreateSubscriptionRazorpayOrder();
   const verifyPaymentMutation = useVerifySubscriptionRazorpayPayment();
@@ -102,7 +104,6 @@ export default function MembershipPage() {
 
   const plans: any[] = plansData?.data || plansData?.plans || [];
   const platformName = settings.platformName || "StreamIT";
-  const user = (() => { try { return JSON.parse(localStorage.getItem("appUser") || "null"); } catch { return null; } })();
 
   // Currency Formatting
   const currency = {
@@ -140,7 +141,7 @@ export default function MembershipPage() {
       if (orderRes?.success && orderRes?.isFree) {
         showToast("🎉 Free plan activated successfully!", "success");
         if (user) {
-          localStorage.setItem("appUser", JSON.stringify({ ...user, subscriptionPlan: selectedPlan?.name || "free", subscriptionStatus: "active" }));
+          updateUser({ subscriptionPlan: selectedPlan?.name || "free", subscriptionStatus: "active" });
         }
         setTimeout(() => setLocation("/account"), 2000);
         return;
@@ -171,7 +172,7 @@ export default function MembershipPage() {
             });
             showToast("🎉 Subscription activated! Welcome to VIP!", "success");
             if (user) {
-              localStorage.setItem("appUser", JSON.stringify({ ...user, subscriptionPlan: selectedPlan?.name || "premium", subscriptionStatus: "active" }));
+              updateUser({ subscriptionPlan: selectedPlan?.name || "premium", subscriptionStatus: "active" });
             }
             setTimeout(() => setLocation("/account"), 2000);
           } catch {

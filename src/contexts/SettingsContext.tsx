@@ -1,11 +1,13 @@
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode, type CSSProperties } from "react";
 import { getSettings, getImageUrl } from "@/lib/api-client";
 
 export interface AppSettings {
   logoUrl: string;
   darkLogoUrl: string;
+  darkLogoWidth?: number;
   lightLogoUrl: string;
+  lightLogoWidth?: number;
   faviconUrl: string;
   logoStyle: 'icon' | 'fill';
   platformName: string;
@@ -131,7 +133,9 @@ export interface AppSettings {
 const DEFAULT: AppSettings = {
   logoUrl: "https://i.imgur.com/45cG5Kc.png",
   darkLogoUrl: "https://i.imgur.com/45cG5Kc.png",
+  darkLogoWidth: 0,
   lightLogoUrl: "https://i.imgur.com/45cG5Kc.png",
+  lightLogoWidth: 0,
   faviconUrl: "",
   logoStyle: "fill",
   platformName: "Triple Minds",
@@ -261,7 +265,9 @@ function mapApiData(api: any): AppSettings {
   return {
     logoUrl: img(api.logoUrl),
     darkLogoUrl: img(api.darkLogoUrl),
+    darkLogoWidth: api.darkLogoWidth ? Number(api.darkLogoWidth) : 0,
     lightLogoUrl: img(api.lightLogoUrl),
+    lightLogoWidth: api.lightLogoWidth ? Number(api.lightLogoWidth) : 0,
     faviconUrl: img(api.faviconUrl),
     logoStyle: api.logoStyle || DEFAULT.logoStyle,
     platformName: api.platformName || "",
@@ -415,6 +421,17 @@ function hexToHsl(hex: string) {
     h /= 6;
   }
   return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+}
+
+export function getResponsiveLogoStyle(baseWidth?: number): CSSProperties | undefined {
+  if (!baseWidth || baseWidth <= 0) return undefined;
+  const min = Math.round(baseWidth * 0.65);
+  const base = Math.round(baseWidth * 0.55);
+  return {
+    width: `clamp(${min}px, ${base}px + 3.5vw, ${baseWidth}px)`,
+    height: "auto",
+    maxWidth: "100%",
+  };
 }
 
 export function applyColorTheme(theme: string) {

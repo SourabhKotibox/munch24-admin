@@ -154,6 +154,12 @@ export default function SubscriptionFormPage() {
         await updateSubscription.mutateAsync({ id: id!, data });
         toast({ title: "Subscription updated successfully" });
       } else {
+        const selectedPlan = plans.find((p: any) => String(p.id || p._id) === planId);
+        if (selectedPlan && selectedPlan.status === false) {
+          toast({ title: "Plan is inactive", description: "Inactive plans cannot be assigned to new subscriptions.", variant: "destructive" });
+          setIsSubmitting(false);
+          return;
+        }
         await createSubscription.mutateAsync(data);
         toast({ title: "Subscription created successfully" });
       }
@@ -224,11 +230,13 @@ export default function SubscriptionFormPage() {
                   <SelectValue placeholder="Select Plan" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover border-border text-foreground max-h-60">
-                  {plans.map((p: any) => (
-                    <SelectItem key={p.id || p._id} value={String(p.id || p._id)}>
-                      {p.name} — {settings?.currencyPosition === "before" ? `${settings?.currencySymbol || '₹'}${Number(p.totalPrice ?? p.price).toFixed(settings?.decimalPlaces ?? 2)}` : `${Number(p.totalPrice ?? p.price).toFixed(settings?.decimalPlaces ?? 2)} ${settings?.currencySymbol || '₹'}`} / {p.durationValue} {p.duration}
-                    </SelectItem>
-                  ))}
+                  {plans
+                    .filter((p: any) => isEdit || p.status !== false || String(p.id || p._id) === planId)
+                    .map((p: any) => (
+                      <SelectItem key={p.id || p._id} value={String(p.id || p._id)} disabled={!isEdit && p.status === false}>
+                        {p.name} {p.status === false ? "(Inactive - Unavailable)" : ""} — {settings?.currencyPosition === "before" ? `${settings?.currencySymbol || '₹'}${Number(p.totalPrice ?? p.price).toFixed(settings?.decimalPlaces ?? 2)}` : `${Number(p.totalPrice ?? p.price).toFixed(settings?.decimalPlaces ?? 2)} ${settings?.currencySymbol || '₹'}`} / {p.durationValue} {p.duration}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>

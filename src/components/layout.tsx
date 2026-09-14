@@ -60,7 +60,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLanguage, languages } from "@/contexts/LanguageContext";
-import { useSettings } from "@/contexts/SettingsContext";
+import { useSettings, getResponsiveLogoStyle } from "@/contexts/SettingsContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTheme } from "next-themes";
 import { HeaderNotifications } from "./HeaderNotifications";
@@ -398,12 +398,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 
   const LogoComponent = ({ collapsed = false }: { collapsed?: boolean }) => {
+    const isDarkLogo = resolvedTheme === "dark" && !!settings.darkLogoUrl;
+    const isLightLogo = resolvedTheme === "light" && !!settings.lightLogoUrl;
+    const activeWidth = isDarkLogo ? settings.darkLogoWidth : isLightLogo ? settings.lightLogoWidth : undefined;
     return (
       <div className="flex items-center justify-center gap-3">
         {getLogoUrl() ? (
           <img
             src={getLogoUrl()}
             alt="Logo"
+            style={collapsed ? undefined : getResponsiveLogoStyle(activeWidth)}
             className="h-9 w-auto object-contain"
           />
         ) : (

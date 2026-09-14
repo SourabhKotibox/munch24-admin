@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Play, Pause, Lock, X, Crown, Star, Volume2, 
 import Hls from "hls.js";
 import { useAdPlayback } from "@/hooks/useAdPlayback";
 import AdOverlay from "@/components/AdOverlay";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface DramaProp {
   id: string | number;
@@ -57,13 +58,7 @@ export default function ShortDramaPlayer({
   onNextEpisode,
   onPrevEpisode,
 }: ShortDramaPlayerProps) {
-  const [user, setUser] = useState<any>(null);
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("appUser");
-      if (stored) setUser(JSON.parse(stored));
-    } catch {}
-  }, []);
+  const { user } = useAuth();
 
   const isSubscribed = user?.subscriptionStatus === "active" && user?.subscriptionPlan !== "free";
 

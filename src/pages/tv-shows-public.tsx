@@ -12,6 +12,7 @@ import { useSettings } from "@/contexts/SettingsContext";
 import SubscriptionPlansModal from "@/components/SubscriptionPlansModal";
 import { PortraitCard } from "@/components/ContentCard";
 import { ScreenAd } from "@/components/AdComponents";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Tab = "home" | "movies" | "tvshows" | "drama" | "new";
 
@@ -92,19 +93,12 @@ export default function TvShowsPublicPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [plansModalOpen, setPlansModalOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const { user, signOut } = useAuth();
   const [page, setPage] = useState(1);
 
   const { data: browseData, isLoading } = useGetWebBrowse({ type: "show", genre: activeGenre, page });
   const { data: homeData } = useGetWebHome();
   const { data: watchHistoryData } = useGetWatchHistory({ limit: 20 });
-
-  useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem("appUser");
-      if (storedUser) setUser(JSON.parse(storedUser));
-    } catch {}
-  }, []);
 
   const handlePlay = (item: any) => {
     const id = item.contentId || item.id || item._id;
@@ -125,10 +119,7 @@ export default function TvShowsPublicPage() {
   };
 
   const handleSignOut = () => {
-    localStorage.removeItem("appUser");
-    localStorage.removeItem("appAccessToken");
-    setUser(null);
-    window.location.reload();
+    signOut();
   };
 
   const allShows: any[] = browseData?.items || [];

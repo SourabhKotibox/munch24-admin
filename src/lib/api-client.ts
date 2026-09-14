@@ -171,6 +171,9 @@ const api = async (
           localStorage.removeItem("appUser");
           localStorage.removeItem("accessToken");
           localStorage.removeItem("user");
+          localStorage.removeItem("refreshToken");
+          localStorage.removeItem("ott_active_profile");
+          window.dispatchEvent(new CustomEvent("auth-changed"));
           window.location.href = "/";
         } else {
           localStorage.removeItem("adminAccessToken");
@@ -3709,7 +3712,7 @@ export const getAppProfile = async () => {
 };
 
 export const useGetAppProfile = () => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('appAccessToken') : null;
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('appAccessToken') || localStorage.getItem('accessToken')) : null;
   return useQuery({
     queryKey: ['app-profile', token],
     queryFn: async () => {
@@ -3718,7 +3721,7 @@ export const useGetAppProfile = () => {
       return res.data;
     },
     retry: false,
-    staleTime: 30000,
+    staleTime: 5000,
   });
 };
 

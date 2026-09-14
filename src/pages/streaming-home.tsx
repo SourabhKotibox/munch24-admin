@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, Fragment, useMemo, useCallback } from "react";
 import { Link, useLocation, useSearch } from "wouter";
-import { useSettings } from "@/contexts/SettingsContext";
+import { useSettings, getResponsiveLogoStyle } from "@/contexts/SettingsContext";
 import { useTheme } from "next-themes";
 import { getImageUrl, useGetPublicAds, recordAdInteraction } from "@/lib/api-client";
 import { HomeBannerAd, GoogleAdsenseBanner, PlayerPrerollAd } from "@/components/AdComponents";
@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { WebsiteReviews } from "@/components/WebsiteReviews";
 import { HOME_CARD_CONTAINER_CLASS, PortraitCard, LandscapeCard } from "@/components/ContentCard";
 import SubscriptionPlansModal from "@/components/SubscriptionPlansModal";
+import { useAuth, formatPlanName } from "@/contexts/AuthContext";
 
 /* ─── TYPES ─── */
 interface ContentItem {
@@ -178,16 +179,8 @@ const HOME_DRAMA_CARD_WIDTH = "w-[150px] sm:w-[180px] lg:w-[200px]";
 const COMPACT_DRAMA_CARD_WIDTH = "w-[120px] sm:w-[135px] lg:w-[150px]";
 
 function ShortDramaCard({ drama, onClick, fullWidth, homeStyle = false, compactStyle = false }: { drama: ShortDrama; onClick: () => void; fullWidth?: boolean; homeStyle?: boolean; compactStyle?: boolean }) {
-  const isSubscribed = (() => {
-    try {
-      const stored = localStorage.getItem("appUser");
-      if (stored) {
-        const u = JSON.parse(stored);
-        return u.subscriptionStatus === "active" && u.subscriptionPlan !== "free";
-      }
-    } catch {}
-    return false;
-  })();
+  const { user } = useAuth();
+  const isSubscribed = user?.subscriptionStatus === "active" && !!user?.subscriptionPlan && user?.subscriptionPlan.toLowerCase() !== "free";
 
   return (
     <div
@@ -1006,6 +999,9 @@ function HomeTab({ onPlay, onSelectDrama, onSubscribeClick, isSubscribed }: {
 /* ─── USER DROPDOWN ─── */
 function UserDropdown({ onSignIn, onSignOut, user }: { onSignIn: () => void; onSignOut?: () => void; user?: any }) {
   const [, setLocation] = useLocation();
+  const isSubscribed = user?.subscriptionStatus === "active" && user?.subscriptionPlan && user?.subscriptionPlan !== "free";
+  const activePlan = isSubscribed ? user.subscriptionPlan : "free";
+  const planFormatted = formatPlanName(activePlan);
 
   return (
     <div className="absolute top-[calc(100%+8px)] right-0 w-[260px] bg-[#0a0a10] border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -1024,10 +1020,10 @@ function UserDropdown({ onSignIn, onSignOut, user }: { onSignIn: () => void; onS
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <p className="text-white font-bold text-sm truncate leading-none">{user ? user.name || "User" : "Guest User"}</p>
-            {user && <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-500 flex-shrink-0" />}
+            {isSubscribed && <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-500 flex-shrink-0" />}
           </div>
           <p className="text-white text-[11px] truncate mt-1 leading-none font-medium">
-            {user ? "Premium Member" : "Sign in for full access"}
+            {user ? `${planFormatted} Member` : "Sign in for full access"}
           </p>
         </div>
       </div>
@@ -1084,6 +1080,7 @@ function SignInModal({ onClose }: { onClose: () => void }) {
 
   const { settings } = useSettings();
   const { resolvedTheme } = useTheme();
+  const { signIn } = useAuth();
 
   const getLogoUrl = () => {
     if (resolvedTheme === "dark" && settings.darkLogoUrl) return getImageUrl(settings.darkLogoUrl);
@@ -1106,42 +1103,26 @@ function SignInModal({ onClose }: { onClose: () => void }) {
         // Phone login: pass phone number as the email field — server handles phone vs email
         const loginIdentifier = usePhone ? phone : email;
         const res = await loginClient({ email: loginIdentifier, password });
-        localStorage.setItem("appAccessToken", res.accessToken);
-        localStorage.setItem("accessToken", res.accessToken); // legacy compat
-        localStorage.setItem("appUser", JSON.stringify({
+        const userData = {
           id: res.userId,
           name: res.name || email.split("@")[0],
           avatar: res.avatar || null,
           subscriptionPlan: res.subscriptionPlan || "free",
           subscriptionStatus: res.subscriptionStatus || "inactive",
-        }));
-        localStorage.setItem("user", JSON.stringify({
-          id: res.userId,
-          name: res.name || email.split("@")[0],
-          avatar: res.avatar || null,
-          subscriptionPlan: res.subscriptionPlan || "free",
-          subscriptionStatus: res.subscriptionStatus || "inactive",
-        }));
-        window.location.reload();
+        };
+        signIn(userData, res.accessToken);
+        onClose();
       } else {
         const res = await registerClient({ email, password, name, phone: phone || undefined });
-        localStorage.setItem("appAccessToken", res.accessToken);
-        localStorage.setItem("accessToken", res.accessToken); // legacy compat
-        localStorage.setItem("appUser", JSON.stringify({
+        const userData = {
           id: res.userId,
           name,
           avatar: res.avatar || null,
           subscriptionPlan: res.subscriptionPlan || "free",
           subscriptionStatus: res.subscriptionStatus || "inactive",
-        }));
-        localStorage.setItem("user", JSON.stringify({
-          id: res.userId,
-          name,
-          avatar: res.avatar || null,
-          subscriptionPlan: res.subscriptionPlan || "free",
-          subscriptionStatus: res.subscriptionStatus || "inactive",
-        }));
-        window.location.reload();
+        };
+        signIn(userData, res.accessToken);
+        onClose();
       }
     } catch (err: any) {
       setError(err.message || "An error occurred");
@@ -1159,7 +1140,20 @@ function SignInModal({ onClose }: { onClose: () => void }) {
           <div className="absolute inset-0 bg-gradient-to-br from-red-600/30 via-black/90 to-[#030306]/95 z-0" />
           <div className="relative z-10 flex flex-col items-center justify-center h-full gap-3">
             {logoUrl ? (
-              <img src={logoUrl} alt={settings.platformName || "StreamIT"} className="h-16 w-auto object-contain drop-shadow-2xl" />
+              <img
+                src={logoUrl}
+                alt={settings.platformName || "StreamIT"}
+                style={
+                  getResponsiveLogoStyle(
+                    resolvedTheme === "dark" && settings.darkLogoUrl
+                      ? settings.darkLogoWidth
+                      : resolvedTheme === "light" && settings.lightLogoUrl
+                      ? settings.lightLogoWidth
+                      : undefined
+                  )
+                }
+                className="h-16 w-auto object-contain drop-shadow-2xl"
+              />
             ) : (
               <>
                 <div className="w-12 h-12 rounded-2xl bg-red-600 flex items-center justify-center shadow-lg shadow-red-600/50">
@@ -1296,11 +1290,14 @@ const NAV_TABS: { label: string; tab: Tab; icon: React.ReactNode }[] = [
   { label: "New & Hot", tab: "new", icon: <Flame className="w-3.5 h-3.5" /> },
 ];
 
-export function PublicHeader({ activeTab, setActiveTab, onSignIn, onSignOut, user, onSubscribeClick }: {
-  activeTab: Tab; setActiveTab: (t: Tab) => void; onSignIn: () => void; onSignOut?: () => void; user?: any; onSubscribeClick?: () => void;
+export function PublicHeader({ activeTab, setActiveTab, onSignIn, onSignOut, user: propUser, onSubscribeClick }: {
+  activeTab: Tab; setActiveTab: (t: Tab) => void; onSignIn?: () => void; onSignOut?: () => void; user?: any; onSubscribeClick?: () => void;
 }) {
+  const { user: authUser, signOut: authSignOut } = useAuth();
+  const user = propUser !== undefined ? propUser : authUser;
+  const effectiveSignOut = onSignOut || authSignOut;
   const [scrolled, setScrolled] = useState(false);
-  const isSubscribed = user?.subscriptionStatus === "active" && user?.subscriptionPlan !== "free";
+  const isSubscribed = user?.subscriptionStatus === "active" && !!user?.subscriptionPlan && user?.subscriptionPlan.toLowerCase() !== "free";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [, setLocation] = useLocation();
   const searchString = useSearch();
@@ -1393,7 +1390,20 @@ export function PublicHeader({ activeTab, setActiveTab, onSignIn, onSignOut, use
             <div className="flex items-center gap-6 lg:gap-8">
               <Link href="/" className="flex items-center gap-2.5 flex-shrink-0 group">
                 {logoUrl ? (
-                  <img src={logoUrl} alt={settings.platformName || "StreamIT"} className="h-8 w-auto object-contain group-hover:scale-105 transition-transform" />
+                  <img
+                    src={logoUrl}
+                    alt={settings.platformName || "StreamIT"}
+                    style={
+                      getResponsiveLogoStyle(
+                        resolvedTheme === "dark" && settings.darkLogoUrl
+                          ? settings.darkLogoWidth
+                          : resolvedTheme === "light" && settings.lightLogoUrl
+                          ? settings.lightLogoWidth
+                          : undefined
+                      )
+                    }
+                    className="h-8 w-auto object-contain group-hover:scale-105 transition-transform"
+                  />
                 ) : (
                   <>
                     <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center shadow-lg shadow-red-600/50 group-hover:scale-105 transition-transform">
@@ -1531,7 +1541,7 @@ export function PublicHeader({ activeTab, setActiveTab, onSignIn, onSignOut, use
                   )}
                   <ChevronDown className={`w-3 h-3 text-white/80 hidden sm:block transition-transform duration-200 ${userDropdownOpen ? "rotate-180" : ""}`} />
                 </button>
-                {userDropdownOpen && <UserDropdown onSignIn={onSignIn} onSignOut={onSignOut} user={user} />}
+                {userDropdownOpen && <UserDropdown onSignIn={onSignIn} onSignOut={effectiveSignOut} user={user} />}
               </div>
 
               <button className="lg:hidden ml-0.5 w-9 h-9 flex items-center justify-center text-white hover:text-white rounded-full hover:bg-white/5 transition-all" onClick={() => setMobileOpen(!mobileOpen)}>
@@ -1608,7 +1618,20 @@ export function PublicFooter() {
           <div className="space-y-4">
             <div className="flex items-center gap-2.5">
               {logoUrl ? (
-                <img src={logoUrl} alt={settings.platformName || "StreamIT"} className="h-9 w-auto object-contain" />
+                <img
+                  src={logoUrl}
+                  alt={settings.platformName || "StreamIT"}
+                  style={
+                    getResponsiveLogoStyle(
+                      resolvedTheme === "dark" && settings.darkLogoUrl
+                        ? settings.darkLogoWidth
+                        : resolvedTheme === "light" && settings.lightLogoUrl
+                        ? settings.lightLogoWidth
+                        : undefined
+                    )
+                  }
+                  className="h-9 w-auto object-contain"
+                />
               ) : (
                 <>
                   <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center shadow-lg shadow-red-600/40">
@@ -1724,11 +1747,13 @@ export default function StreamingHomePage() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const [showSignIn, setShowSignIn] = useState(false);
-  const [user, setUser] = useState<any>(null);
   const [toastMsg, setToastMsg] = useState("");
   const [plansModalOpen, setPlansModalOpen] = useState(false);
   const [pendingPlay, setPendingPlay] = useState<any>(null);
   const [showPreroll, setShowPreroll] = useState(false);
+
+  // ── Auth — single source of truth ──────────────────────────────────────────
+  const { user, signOut } = useAuth();
 
   // Prefetch player ads so we know if pre-roll exists before showing it
   const { data: playerAdsData } = useGetPublicAds({ placement: 'Player' });
@@ -1751,19 +1776,6 @@ export default function StreamingHomePage() {
   };
 
   useEffect(() => {
-    const loadUser = () => {
-      try {
-        const storedUser = localStorage.getItem("appUser") || localStorage.getItem("user");
-        if (storedUser) setUser(JSON.parse(storedUser));
-        else setUser(null);
-      } catch (e) { /* ignore */ }
-    };
-    loadUser();
-    window.addEventListener("user-updated", loadUser);
-    return () => window.removeEventListener("user-updated", loadUser);
-  }, []);
-
-  useEffect(() => {
     const tabNames: Record<string, string> = {
       home: "Home",
       drama: "Short Dramas",
@@ -1777,15 +1789,10 @@ export default function StreamingHomePage() {
   }, [activeTab, settings?.platformName]);
 
   const handleSignOut = () => {
-    localStorage.removeItem("appUser");
-    localStorage.removeItem("appAccessToken");
-    localStorage.removeItem("user");
-    localStorage.removeItem("accessToken");
-    setUser(null);
-    window.location.reload();
+    signOut();
   };
 
-  const isSubscribed = user?.subscriptionStatus === "active" && user?.subscriptionPlan !== "free";
+  const isSubscribed = user?.subscriptionStatus === "active" && !!user?.subscriptionPlan && user?.subscriptionPlan.toLowerCase() !== "free";
 
   const navigateToContent = useCallback((item: any) => {
     const id = item.contentId || item.id || item._id;

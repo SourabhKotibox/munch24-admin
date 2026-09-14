@@ -16,6 +16,7 @@ import { PortraitCard } from "@/components/ContentCard";
 import { isContentLockedForUser } from "@/lib/planAccess";
 import { mapContentTypeToAdTarget, usePlayerAdBreaks } from "@/lib/adPlayback";
 import { useSettings } from "@/contexts/SettingsContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 function fmtCount(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -954,14 +955,7 @@ function LockPopup({ episodeNum, onClose, onSubscribed }: { episodeNum: number; 
   const { toast } = useToast();
   const { data: plansData, isLoading: loadingPlans } = useGetWebSubscriptionPlans();
   const createSubMutation = useCreateSubscription();
-  const [user, setUser] = useState<any>(null);
-
-  useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem("appUser");
-      if (storedUser) setUser(JSON.parse(storedUser));
-    } catch (e) {}
-  }, []);
+  const { user } = useAuth();
 
   const plans = plansData?.data || [];
 
@@ -1082,15 +1076,11 @@ export default function EpisodeDetailPage() {
   const params = useParams<{ showTitle: string; epNum: string }>();
   const [, navigate] = useLocation();
 
-  const [user, setUser] = useState<any>(null);
+  const { user, signOut } = useAuth();
   const [playerStarted, setPlayerStarted] = useState(false);
 
   useEffect(() => {
     try {
-      const appUserStr = localStorage.getItem("appUser");
-      const userStr = localStorage.getItem("user");
-      const parsedUser = appUserStr ? JSON.parse(appUserStr) : (userStr ? JSON.parse(userStr) : null);
-      if (parsedUser) setUser(parsedUser);
       // Sync token key so API calls work for users who logged in via streaming-home
       if (!localStorage.getItem("appAccessToken") && localStorage.getItem("accessToken")) {
         localStorage.setItem("appAccessToken", localStorage.getItem("accessToken")!);
@@ -1099,12 +1089,7 @@ export default function EpisodeDetailPage() {
   }, []);
 
   const handleSignOut = () => {
-    localStorage.removeItem("appUser");
-    localStorage.removeItem("appAccessToken");
-    localStorage.removeItem("user");
-    localStorage.removeItem("accessToken");
-    setUser(null);
-    window.location.reload();
+    signOut();
   };
 
   const recordShareMutation = useRecordShare();
@@ -1139,12 +1124,7 @@ export default function EpisodeDetailPage() {
   };
 
   const handleSubscribed = useCallback(() => {
-    try {
-      const appUserStr = localStorage.getItem("appUser");
-      const userStr = localStorage.getItem("user");
-      const parsedUser = appUserStr ? JSON.parse(appUserStr) : (userStr ? JSON.parse(userStr) : null);
-      if (parsedUser) setUser(parsedUser);
-    } catch (e) {}
+    // Auth state is managed via AuthContext
   }, []);
 
   const [currentEp, setCurrentEp]       = useState(() => parseInt(params.epNum || "1", 10));
@@ -1182,6 +1162,7 @@ export default function EpisodeDetailPage() {
   const { data: savedProgress } = useGetWatchProgress(contentId || undefined, currentEpId || undefined);
 
   const { data: profileData } = useGetAppProfile();
+  const canDownload = (profileData?.user?.downloadAllowed ?? user?.downloadAllowed) === true;
   const { toast } = useToast();
 
   const { data: wishlistData } = useGetWishlist({ limit: 100 });
@@ -1510,22 +1491,24 @@ export default function EpisodeDetailPage() {
                 </button>
 
                 {/* Download Button */}
-                <button
-                  onClick={() => handleDownloadToggle(currentEp)}
-                  disabled={requestDownloadMutation.isPending || removeDownloadMutation.isPending}
-                  className="flex flex-col items-center gap-1 px-4 py-2 text-foreground/80 hover:text-foreground transition-all active:scale-95 disabled:opacity-70"
-                >
-                  {requestDownloadMutation.isPending || removeDownloadMutation.isPending ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : isDownloaded ? (
-                    <Check className="w-5 h-5 text-emerald-400" strokeWidth={3} />
-                  ) : (
-                    <Download className="w-5 h-5" />
-                  )}
-                  <span className="text-[11px] font-semibold mt-0.5">
-                    {isDownloaded ? "Downloaded" : "Download"}
-                  </span>
-                </button>
+                {canDownload && showData?.downloadAllowed !== false && (apiEpisodes.length === 0 || currentEpisode?.downloadAllowed !== false) && (
+                  <button
+                    onClick={() => handleDownloadToggle(currentEp)}
+                    disabled={requestDownloadMutation.isPending || removeDownloadMutation.isPending}
+                    className="flex flex-col items-center gap-1 px-4 py-2 text-foreground/80 hover:text-foreground transition-all active:scale-95 disabled:opacity-70"
+                  >
+                    {requestDownloadMutation.isPending || removeDownloadMutation.isPending ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : isDownloaded ? (
+                      <Check className="w-5 h-5 text-emerald-400" strokeWidth={3} />
+                    ) : (
+                      <Download className="w-5 h-5" />
+                    )}
+                    <span className="text-[11px] font-semibold mt-0.5">
+                      {isDownloaded ? "Downloaded" : "Download"}
+                    </span>
+                  </button>
+                )}
               </div>
 
               {/* Cast & Crew Section */}
@@ -1652,7 +1635,7 @@ export default function EpisodeDetailPage() {
                                 >
                                   {ep.episode || ep.episodeNumber || ep.number}. {ep.title}
                                 </h4>
-                                {!isLocked && (
+                                {canDownload && !isLocked && showData?.downloadAllowed !== false && ep.downloadAllowed !== false && (
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();

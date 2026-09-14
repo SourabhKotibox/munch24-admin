@@ -172,6 +172,8 @@ export default function Settings() {
     instagramUrl: ctxSettings.instagramUrl,
     youtubeUrl: ctxSettings.youtubeUrl,
     logoStyle: ctxSettings.logoStyle,
+    darkLogoWidth: ctxSettings.darkLogoWidth || "",
+    lightLogoWidth: ctxSettings.lightLogoWidth || "",
   });
 
   useEffect(() => {
@@ -186,6 +188,8 @@ export default function Settings() {
       instagramUrl: ctxSettings.instagramUrl,
       youtubeUrl: ctxSettings.youtubeUrl,
       logoStyle: ctxSettings.logoStyle,
+      darkLogoWidth: ctxSettings.darkLogoWidth || "",
+      lightLogoWidth: ctxSettings.lightLogoWidth || "",
     });
   }, [
     ctxSettings.platformName,
@@ -198,6 +202,8 @@ export default function Settings() {
     ctxSettings.instagramUrl,
     ctxSettings.youtubeUrl,
     ctxSettings.logoStyle,
+    ctxSettings.darkLogoWidth,
+    ctxSettings.lightLogoWidth,
   ]);
 
   // logo preview states
@@ -235,6 +241,8 @@ export default function Settings() {
         instagramUrl: business.instagramUrl,
         youtubeUrl: business.youtubeUrl,
         logoStyle: business.logoStyle,
+        darkLogoWidth: business.darkLogoWidth ? Number(business.darkLogoWidth) : 0,
+        lightLogoWidth: business.lightLogoWidth ? Number(business.lightLogoWidth) : 0,
         lightLogoUrl: lightLogoPreview !== ctxSettings.lightLogoUrl ? lightLogoPreview : undefined,
         darkLogoUrl: darkLogoPreview !== ctxSettings.darkLogoUrl ? darkLogoPreview : undefined,
         faviconUrl: faviconPreview !== ctxSettings.faviconUrl ? faviconPreview : undefined,
@@ -774,16 +782,54 @@ export default function Settings() {
       <div className="mb-6">
         <p className="text-sm font-semibold text-foreground mb-4">Logos & Favicon</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <LogoUploadBox
-            label="Light Theme Logo"
-            preview={lightLogoPreview}
-            onClick={() => setMediaPickerType("lightLogo")}
-          />
-          <LogoUploadBox
-            label="Dark Theme Logo"
-            preview={darkLogoPreview}
-            onClick={() => setMediaPickerType("darkLogo")}
-          />
+          <div className="space-y-2">
+            <LogoUploadBox
+              label="Light Theme Logo"
+              preview={lightLogoPreview}
+              onClick={() => setMediaPickerType("lightLogo")}
+            />
+            <div className="space-y-1 pt-1">
+              <Label className={labelCls}>Light Logo Width (px)</Label>
+              <Input
+                type="number"
+                min={20}
+                max={500}
+                value={business.lightLogoWidth || ""}
+                onChange={(e) =>
+                  setBusiness({
+                    ...business,
+                    lightLogoWidth: e.target.value ? Number(e.target.value) : ("" as any),
+                  })
+                }
+                placeholder="Width in px (e.g. 140)"
+                className={inputCls}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <LogoUploadBox
+              label="Dark Theme Logo"
+              preview={darkLogoPreview}
+              onClick={() => setMediaPickerType("darkLogo")}
+            />
+            <div className="space-y-1 pt-1">
+              <Label className={labelCls}>Dark Logo Width (px)</Label>
+              <Input
+                type="number"
+                min={20}
+                max={500}
+                value={business.darkLogoWidth || ""}
+                onChange={(e) =>
+                  setBusiness({
+                    ...business,
+                    darkLogoWidth: e.target.value ? Number(e.target.value) : ("" as any),
+                  })
+                }
+                placeholder="Width in px (e.g. 140)"
+                className={inputCls}
+              />
+            </div>
+          </div>
           <LogoUploadBox
             label="Favicon"
             preview={faviconPreview}

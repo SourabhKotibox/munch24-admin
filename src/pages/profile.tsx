@@ -81,12 +81,13 @@ export default function ProfilePage() {
         setPhotoFile(null);
         setUploadingPhoto(false);
       }
-      await updateProfileMutation.mutateAsync(updateData);
       const userStr = localStorage.getItem("appUser");
       if (userStr) {
-        localStorage.setItem("user", JSON.stringify({ ...JSON.parse(userStr), ...updateData }));
+        const updated = { ...JSON.parse(userStr), ...updateData };
+        localStorage.setItem("user", JSON.stringify(updated));
+        localStorage.setItem("appUser", JSON.stringify(updated));
+        window.dispatchEvent(new CustomEvent("auth-changed"));
       }
-      window.dispatchEvent(new Event("user-updated"));
       toast({ title: "Profile updated successfully" });
     } catch (error: any) {
       setUploadingPhoto(false);

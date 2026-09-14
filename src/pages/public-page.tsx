@@ -3,11 +3,12 @@ import { useParams, useLocation } from "wouter";
 import { Loader2, AlertCircle, ChevronLeft, Clock } from "lucide-react";
 import { useGetPageBySlug } from "@/lib/api-client";
 import { PublicHeader, PublicFooter } from "@/pages/streaming-home";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function PublicPagePage() {
   const { slug } = useParams<{ slug: string }>();
   const [, setLocation] = useLocation();
-  const [user, setUser] = useState<any>(null);
+  const { user, signOut } = useAuth();
   const [plansModalOpen, setPlansModalOpen] = useState(false);
 
   useEffect(() => {
@@ -19,13 +20,6 @@ export default function PublicPagePage() {
   const { data, isLoading, error } = useGetPageBySlug(slug || "");
 
   const page = data?.page || data?.data || (data && !data.data && !data.page ? data : null);
-
-  useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem("appUser");
-      if (storedUser) setUser(JSON.parse(storedUser));
-    } catch {}
-  }, []);
 
   useEffect(() => {
     if (page) {
@@ -56,9 +50,7 @@ export default function PublicPagePage() {
   }, [page]);
 
   const handleSignOut = () => {
-    localStorage.removeItem("appUser");
-    localStorage.removeItem("appAccessToken");
-    setUser(null);
+    signOut();
     setLocation("/");
   };
 

@@ -10,6 +10,7 @@ import { Layout } from "@/components/layout";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { SettingsProvider, useSettings } from "@/contexts/SettingsContext";
 import { useGetMe } from "@/lib/api-client";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 // Helper to convert hex to HSL
 function hexToHSL(hex: string): { h: number; s: number; l: number } {
@@ -462,12 +463,14 @@ function App() {
         <SettingsProvider>
           <ThemeApplier />
           <QueryClientProvider client={queryClient}>
-            <TooltipProvider>
-              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-                <Router />
-              </WouterRouter>
-              <Toaster />
-            </TooltipProvider>
+            <AuthProvider>
+              <TooltipProvider>
+                <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                  <Router />
+                </WouterRouter>
+                <Toaster />
+              </TooltipProvider>
+            </AuthProvider>
           </QueryClientProvider>
         </SettingsProvider>
       </LanguageProvider>

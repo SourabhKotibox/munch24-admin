@@ -7,7 +7,7 @@ import {
   Bookmark, Settings, CreditCard, Film, Tv, X, Download, BookmarkX,
   Plus, UserCircle2, Wifi, Smartphone, Wallet
 } from "lucide-react";
-import { useSettings } from "@/contexts/SettingsContext";
+import { useSettings, getResponsiveLogoStyle } from "@/contexts/SettingsContext";
 import { useTheme } from "next-themes";
 import {
   getImageUrl, updateAppProfile, uploadProfileAvatar, updatePassword, deleteAccount,
@@ -17,6 +17,7 @@ import {
 } from "@/lib/api-client";
 import { PublicFooter } from "@/pages/streaming-home";
 import { WebsiteReviews } from "@/components/WebsiteReviews";
+import { useAuth } from "@/contexts/AuthContext";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type ProfileTab = "overview" | "watchlist" | "downloads" | "settings" | "security" | "feedback";
@@ -241,12 +242,9 @@ export default function UserProfilePage() {
   const { settings } = useSettings();
   const { resolvedTheme } = useTheme();
 
-  const [user, setUser] = useState<any>(() => {
-    try {
-      const stored = localStorage.getItem("appUser");
-      return stored ? JSON.parse(stored) : null;
-    } catch { return null; }
-  });
+  // ── Auth — single source of truth ──────────────────────────────────────────
+  const { user, signOut, updateUser } = useAuth();
+
   const [activeTab, setActiveTab] = useState<ProfileTab>("overview");
   const [toast, setToast] = useState("");
 
@@ -265,8 +263,8 @@ export default function UserProfilePage() {
         subscriptionStatus: u.subscriptionStatus || "inactive",
         profileLimitCount: u.profileLimitCount || 1,
       };
-      localStorage.setItem("appUser", JSON.stringify(freshUser));
-      setUser(freshUser);
+      // Update via context so all pages see fresh data
+      updateUser(freshUser);
       setEditName(freshUser.name || "");
       setEditEmail(freshUser.email || "");
       setEditPhone(freshUser.phone || "");
@@ -276,9 +274,9 @@ export default function UserProfilePage() {
   const [activeProfile, setActiveProfile] = useState<OttProfile | null>(null);
 
   // Edit profile state
-  const [editName, setEditName] = useState("");
-  const [editEmail, setEditEmail] = useState("");
-  const [editPhone, setEditPhone] = useState("");
+  const [editName, setEditName] = useState(user?.name || "");
+  const [editEmail, setEditEmail] = useState(user?.email || "");
+  const [editPhone, setEditPhone] = useState((user?.phone as string) || "");
   const [editSaving, setEditSaving] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -317,14 +315,8 @@ export default function UserProfilePage() {
   };
 
   useEffect(() => {
+    // Load active profile from localStorage (profile-switching is localStorage-only)
     try {
-      const stored = localStorage.getItem("appUser");
-      if (stored) {
-        const u = JSON.parse(stored);
-        setEditName(u.name || "");
-        setEditEmail(u.email || "");
-        setEditPhone(u.phone || "");
-      }
       const savedProfile = localStorage.getItem("ott_active_profile");
       if (savedProfile) setActiveProfile(JSON.parse(savedProfile));
     } catch {}
@@ -353,12 +345,8 @@ export default function UserProfilePage() {
   }, [downloadItems.length]);
 
   const handleSignOut = () => {
-    localStorage.removeItem("appUser");
-    localStorage.removeItem("appAccessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("ott_active_profile");
+    signOut();
     setLocation("/");
-    window.location.reload();
   };
 
   const handleSaveProfile = async () => {
@@ -368,7 +356,6 @@ export default function UserProfilePage() {
       await updateAppProfile({ name: editName, email: editEmail, phone: editPhone });
       refetchProfile();
       setToast("Profile updated successfully");
-      window.dispatchEvent(new Event("user-updated"));
     } catch (e: any) {
       setToast("Failed to update profile");
     } finally {
@@ -415,8 +402,7 @@ export default function UserProfilePage() {
     setDeleting(true);
     try {
       await deleteAccount();
-      localStorage.removeItem("appUser");
-      localStorage.removeItem("appAccessToken");
+      signOut();
       setLocation("/");
     } catch {
       setDeleting(false); setDeleteConfirm(false);
@@ -498,7 +484,20 @@ export default function UserProfilePage() {
             </Link>
             <div className="flex items-center gap-2">
               {getLogoUrl() ? (
-                <img src={getLogoUrl()} alt={settings.platformName} className="h-7 w-auto object-contain" />
+                <img
+                  src={getLogoUrl()}
+                  alt={settings.platformName}
+                  style={
+                    getResponsiveLogoStyle(
+                      resolvedTheme === "dark" && settings.darkLogoUrl
+                        ? settings.darkLogoWidth
+                        : resolvedTheme === "light" && settings.lightLogoUrl
+                        ? settings.lightLogoWidth
+                        : undefined
+                    )
+                  }
+                  className="h-7 w-auto object-contain"
+                />
               ) : (
                 <h1 className="text-foreground font-black text-lg tracking-tight">{settings.platformName || "StreamIT"}</h1>
               )}

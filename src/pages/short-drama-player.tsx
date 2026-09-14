@@ -17,6 +17,7 @@ import SubscriptionPlansModal from "@/components/SubscriptionPlansModal";
 import { PlayerAdOverlay, ScreenAd } from "@/components/AdComponents";
 import { usePlayerAdBreaks } from "@/lib/adPlayback";
 import { useSettings } from "@/contexts/SettingsContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Tab = "home" | "movies" | "tvshows" | "drama" | "new";
 
@@ -41,7 +42,7 @@ export default function ShortDramaPlayer() {
   const containerRef = useRef<HTMLDivElement>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const [user, setUser] = useState<any>(null);
+  const { user } = useAuth();
   const [plansModalOpen, setPlansModalOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -85,21 +86,6 @@ export default function ShortDramaPlayer() {
   const userPlan = profileData?.user?.subscriptionPlan || "free";
 
   useEffect(() => {
-    try {
-      // Try all possible key variants (appUser from public-auth, user from streaming-home login)
-      const appUserStr = localStorage.getItem("appUser");
-      const userStr = localStorage.getItem("user");
-      const parsedUser = appUserStr ? JSON.parse(appUserStr) : (userStr ? JSON.parse(userStr) : null);
-      if (parsedUser) setUser(parsedUser);
-
-      // Also ensure appAccessToken is set if only accessToken exists (legacy sessions)
-      if (!localStorage.getItem("appAccessToken") && localStorage.getItem("accessToken")) {
-        localStorage.setItem("appAccessToken", localStorage.getItem("accessToken")!);
-      }
-    } catch {}
-  }, []);
-
-  useEffect(() => {
     const routeEp = parseInt(epNum || "1", 10);
     if (routeEp !== currentEpNum) {
       setCurrentEpNum(routeEp);
@@ -117,6 +103,7 @@ export default function ShortDramaPlayer() {
   // Use live profileData subscription status as source of truth
   const liveSubscriptionStatus = profileData?.subscriptionStatus || user?.subscriptionStatus;
   const liveSubscriptionPlan = profileData?.subscriptionPlan || user?.subscriptionPlan;
+  const canDownload = (profileData?.user?.downloadAllowed ?? user?.downloadAllowed) === true;
 
   // Episode is locked if it's marked as locked for this specific user by the backend
   const isLocked = currentEpisode ? (currentEpisode.isLockedForUser !== undefined ? currentEpisode.isLockedForUser : !currentEpisode.isFree) : false;
@@ -610,22 +597,24 @@ export default function ShortDramaPlayer() {
             </button>
 
             {/* Download Action */}
-            <button
-              onClick={(e) => { e.stopPropagation(); handleDownloadEpisode(); }}
-              disabled={downloading || requestDownloadMutation.isPending || removeDownloadMutation.isPending}
-              className="flex flex-col items-center gap-1 group/float active:scale-90 transition-all text-white disabled:opacity-50"
-            >
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-black/60 border backdrop-blur-md transition-colors group-hover/float:bg-white/20 ${
-                isDownloaded ? "border-emerald-500/40 text-emerald-400" : "border-white/10"
-              }`}>
-                {(downloading || requestDownloadMutation.isPending || removeDownloadMutation.isPending)
-                  ? <Loader2 className="w-4.5 h-4.5 animate-spin" />
-                  : isDownloaded
-                  ? <Check className="w-4.5 h-4.5 text-emerald-400" />
-                  : <Download className="w-4.5 h-4.5" />}
-              </div>
-              <span className="text-[9px] font-bold drop-shadow-md">{isDownloaded ? "Saved" : "Save"}</span>
-            </button>
+            {canDownload && show?.downloadAllowed !== false && currentEpisode?.downloadAllowed !== false && (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleDownloadEpisode(); }}
+                disabled={downloading || requestDownloadMutation.isPending || removeDownloadMutation.isPending}
+                className="flex flex-col items-center gap-1 group/float active:scale-90 transition-all text-white disabled:opacity-50"
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-black/60 border backdrop-blur-md transition-colors group-hover/float:bg-white/20 ${
+                  isDownloaded ? "border-emerald-500/40 text-emerald-400" : "border-white/10"
+                }`}>
+                  {(downloading || requestDownloadMutation.isPending || removeDownloadMutation.isPending)
+                    ? <Loader2 className="w-4.5 h-4.5 animate-spin" />
+                    : isDownloaded
+                    ? <Check className="w-4.5 h-4.5 text-emerald-400" />
+                    : <Download className="w-4.5 h-4.5" />}
+                </div>
+                <span className="text-[9px] font-bold drop-shadow-md">{isDownloaded ? "Saved" : "Save"}</span>
+              </button>
+            )}
 
             {/* Episodes List Trigger */}
             <button

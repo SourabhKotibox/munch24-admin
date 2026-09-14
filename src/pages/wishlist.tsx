@@ -1,19 +1,14 @@
-import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Loader2, ArrowLeft, Bookmark, Trash2, Play } from "lucide-react";
 import { useGetWishlist, useToggleWishlist, getImageUrl } from "@/lib/api-client";
 import { PublicHeader, PublicFooter } from "@/pages/streaming-home";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function WishlistPage() {
   const [, setLocation] = useLocation();
-  const [user, setUser] = useState<any>(null);
+  const { user, signOut } = useAuth();
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("appUser");
-      if (stored) setUser(JSON.parse(stored));
-    } catch {}
-  }, []);
+
 
   const { data: wishlistData, isLoading, refetch } = useGetWishlist({ limit: 100 });
   const wishlistItems: any[] = wishlistData?.items || [];
@@ -39,12 +34,8 @@ export default function WishlistPage() {
   };
 
   const handleSignOut = () => {
-    localStorage.removeItem("appUser");
-    localStorage.removeItem("appAccessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("ott_active_profile");
-    setLocation("/login");
-    window.location.reload();
+    signOut();
+    setLocation("/");
   };
 
   return (

@@ -3,6 +3,7 @@ import { X, Crown, Check, Loader2, Sparkles, Flame, Play } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useGetWebSubscriptionPlans, useCreateSubscriptionRazorpayOrder, useVerifySubscriptionRazorpayPayment } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const loadRazorpay = () => {
   return new Promise((resolve) => {
@@ -26,15 +27,8 @@ export default function SubscriptionPlansModal({ isOpen, onClose, onSubscribed }
   const { data: plansData, isLoading: loadingPlans } = useGetWebSubscriptionPlans();
   const createOrderMutation = useCreateSubscriptionRazorpayOrder();
   const verifyPaymentMutation = useVerifySubscriptionRazorpayPayment();
-  const [user, setUser] = useState<any>(null);
+  const { user, updateUser } = useAuth();
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-
-  useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem("appUser");
-      if (storedUser) setUser(JSON.parse(storedUser));
-    } catch (e) {}
-  }, [isOpen]);
 
   // Prevent background scroll when modal is open
   useEffect(() => {
@@ -73,13 +67,10 @@ export default function SubscriptionPlansModal({ isOpen, onClose, onSubscribed }
 
       if (orderData.isFree) {
         // Free plan logic bypasses Razorpay popup
-        const updatedUser = {
-          ...user,
+        updateUser({
           subscriptionPlan: plan.name,
           subscriptionStatus: 'active'
-        };
-        localStorage.setItem("appUser", JSON.stringify(updatedUser));
-        window.dispatchEvent(new Event("user-updated"));
+        });
 
         toast({
           title: "Subscription Successful",
@@ -113,13 +104,10 @@ export default function SubscriptionPlansModal({ isOpen, onClose, onSubscribed }
               userId: user.id || user._id,
             });
 
-            const updatedUser = {
-              ...user,
+            updateUser({
               subscriptionPlan: plan.name,
               subscriptionStatus: 'active'
-            };
-            localStorage.setItem("appUser", JSON.stringify(updatedUser));
-            window.dispatchEvent(new Event("user-updated"));
+            });
 
             toast({
               title: "Subscription Successful",

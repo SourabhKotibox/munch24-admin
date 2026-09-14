@@ -144,13 +144,14 @@ export default function PlanFormPage() {
     setSaving(true);
     try {
       let planId = id;
+      const isFree = name.trim().toLowerCase() === "free";
       const planPayload = {
         name: name.trim(),
         duration,
         durationValue: parseInt(durationValue) || 1,
         price: parseFloat(price),
         discount: discountNum,   // percentage — backend recalculates totalPrice
-        status,
+        status: isFree ? true : status,
         description: description.trim(),
         level: parseInt(level) || 1,
       };
@@ -306,13 +307,23 @@ export default function PlanFormPage() {
           {/* Status */}
           <div className="space-y-1.5">
             <Label className={labelCls}>Status</Label>
-            <div className="h-11 px-4 rounded-lg border border-border bg-muted flex items-center justify-between">
-              <span className="text-sm text-foreground font-medium">
-                {status ? "Active" : "Inactive"}
-              </span>
-              <Switch checked={status} onCheckedChange={setStatus}
-                className="data-[state=checked]:bg-primary" />
-            </div>
+            {(() => {
+              const isFree = name.trim().toLowerCase() === "free";
+              return (
+                <div className="h-11 px-4 rounded-lg border border-border bg-muted flex items-center justify-between">
+                  <span className="text-sm text-foreground font-medium">
+                    {isFree || status ? "Active" : "Inactive"}
+                  </span>
+                  <Switch
+                    checked={isFree ? true : status}
+                    disabled={isFree}
+                    onCheckedChange={setStatus}
+                    className="data-[state=checked]:bg-primary disabled:opacity-60 disabled:cursor-not-allowed"
+                    title={isFree ? "Free plan is permanently active" : undefined}
+                  />
+                </div>
+              );
+            })()}
           </div>
         </div>
 

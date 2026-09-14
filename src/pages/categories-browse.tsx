@@ -9,6 +9,7 @@ import { useGetWebBrowse, useGetGenres } from "@/lib/api-client";
 import SubscriptionPlansModal from "@/components/SubscriptionPlansModal";
 import { PortraitCard } from "@/components/ContentCard";
 import { ScreenAd } from "@/components/AdComponents";
+import { useAuth } from "@/contexts/AuthContext";
 
 type ContentType = "all" | "movie" | "show" | "drama";
 
@@ -38,7 +39,7 @@ export default function CategoriesBrowsePage() {
   const params = useParams<{ tab?: string }>();
   const [activeTab, setActiveTab] = useState<"home" | "movies" | "tvshows" | "drama" | "new">("home");
   const [plansModalOpen, setPlansModalOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const { user, signOut } = useAuth();
 
   const searchParams = new URLSearchParams(searchString);
   const isTrending = searchParams.has("trending");
@@ -72,10 +73,6 @@ export default function CategoriesBrowsePage() {
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    const stored = localStorage.getItem("appUser");
-    if (stored) try { setUser(JSON.parse(stored)); } catch {}
-  }, []);
 
   // Sync search query from URL
   useEffect(() => {
@@ -184,10 +181,8 @@ export default function CategoriesBrowsePage() {
   };
 
   const handleSignOut = () => {
-    localStorage.removeItem("appUser");
-    localStorage.removeItem("appAccessToken");
+    signOut();
     setUser(null);
-    window.location.reload();
   };
 
   return (

@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useLocation, Link } from "wouter";
 import { Play, Eye, EyeOff, Loader2, ArrowLeft, Wrench } from "lucide-react";
 import { loginClient, registerClient, getImageUrl } from "@/lib/api-client";
-import { useSettings } from "@/contexts/SettingsContext";
+import { useSettings, getResponsiveLogoStyle } from "@/contexts/SettingsContext";
 import { useTheme } from "next-themes";
+import { useAuth } from "@/contexts/AuthContext";
 
 declare global {
   interface Window {
@@ -54,6 +55,7 @@ export default function PublicAuthPage() {
 
   const { settings } = useSettings();
   const { resolvedTheme } = useTheme();
+  const { signIn } = useAuth();
 
   const showSocial = settings.socialLogin && (!!settings.googleClientId || !!settings.appleClientId);
 
@@ -72,8 +74,7 @@ export default function PublicAuthPage() {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   const handleAuthSuccess = useCallback((res: any) => {
-    localStorage.setItem("appAccessToken", res.accessToken);
-    localStorage.setItem("appUser", JSON.stringify({
+    const userData = {
       id: res.userId,
       name: res.name,
       email: res.email || null,
@@ -84,10 +85,10 @@ export default function PublicAuthPage() {
       subscriptionExpiry: res.subscriptionExpiry || null,
       walletBalance: res.walletBalance || 0,
       profileLimitCount: res.profileLimitCount || 1,
-    }));
+    };
+    signIn(userData, res.accessToken);
     setLocation("/");
-    window.location.reload();
-  }, [setLocation]);
+  }, [setLocation, signIn]);
 
   const handleAuthError = useCallback((err: any) => {
     if (err?.message?.includes("maintenance") || err?.maintenance) {
@@ -224,7 +225,20 @@ export default function PublicAuthPage() {
         <div className="flex flex-col items-center text-center mb-8">
           <Link href="/" className="flex items-center gap-2.5 mb-6 group">
             {logoUrl ? (
-              <img src={logoUrl} alt={settings.platformName || "StreamIT"} className="h-10 w-auto object-contain group-hover:scale-105 transition-transform" />
+              <img
+                src={logoUrl}
+                alt={settings.platformName || "StreamIT"}
+                style={
+                  getResponsiveLogoStyle(
+                    resolvedTheme === "dark" && settings.darkLogoUrl
+                      ? settings.darkLogoWidth
+                      : resolvedTheme === "light" && settings.lightLogoUrl
+                      ? settings.lightLogoWidth
+                      : undefined
+                  )
+                }
+                className="h-10 w-auto object-contain group-hover:scale-105 transition-transform"
+              />
             ) : (
               <>
                 <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/50 group-hover:scale-105 transition-transform">

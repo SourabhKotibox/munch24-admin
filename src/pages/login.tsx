@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useSettings } from "@/contexts/SettingsContext";
+import { useSettings, getResponsiveLogoStyle } from "@/contexts/SettingsContext";
 import { useTheme } from "next-themes";
 
 export default function Login() {
@@ -88,6 +88,15 @@ export default function Login() {
               <img
                 src={getLogoUrl()}
                 alt="Logo"
+                style={
+                  getResponsiveLogoStyle(
+                    resolvedTheme === "dark" && settings.darkLogoUrl
+                      ? settings.darkLogoWidth
+                      : resolvedTheme === "light" && settings.lightLogoUrl
+                      ? settings.lightLogoWidth
+                      : undefined
+                  )
+                }
                 className="max-h-32 max-w-xs w-auto h-auto object-contain"
               />
             ) : (

@@ -9,6 +9,7 @@ import { useGetWebDetail, getImageUrl, useGetWishlist, useToggleWishlist, useGet
 import { PublicHeader, PublicFooter } from "@/pages/streaming-home";
 import SubscriptionPlansModal from "@/components/SubscriptionPlansModal";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Tab = "home" | "movies" | "tvshows" | "drama" | "new";
 
@@ -25,26 +26,22 @@ export default function TVShowDetailPage() {
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState<Tab>("tvshows");
-  const [user, setUser] = useState<any>(null);
+  const { user, signOut } = useAuth();
   const [plansModalOpen, setPlansModalOpen] = useState(false);
   const [selectedSeason, setSelectedSeason] = useState(1);
 
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem("appUser");
-      if (storedUser) setUser(JSON.parse(storedUser));
-    } catch {}
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [id]);
 
   const handleSignOut = () => {
-    localStorage.removeItem("appUser");
-    localStorage.removeItem("appAccessToken");
-    setUser(null);
-    window.location.reload();
+    signOut();
   };
 
   const isSubscribed = user?.subscriptionStatus === "active" && user?.subscriptionPlan !== "free";
+
+  const { data: profileData } = useGetAppProfile();
+  const canDownload = (profileData?.user?.downloadAllowed ?? user?.downloadAllowed) === true;
 
   const { data: detailData, isLoading } = useGetWebDetail(id || "");
   const show = (detailData as any)?.content || detailData;
@@ -275,14 +272,16 @@ export default function TVShowDetailPage() {
                       {ep.description && (
                         <p className="text-foreground text-xs mt-1 line-clamp-2 leading-relaxed">{ep.description}</p>
                       )}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleDownloadEpisode(ep); }}
-                        disabled={downloadingEp === (ep._id || ep.id)}
-                        className="mt-2 flex items-center gap-1 text-[10px] font-bold text-foreground hover:text-emerald-400 transition-colors disabled:opacity-50"
-                      >
-                        {downloadingEp === (ep._id || ep.id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
-                        {downloadingEp === (ep._id || ep.id) ? "Adding..." : "Download"}
-                      </button>
+                      {canDownload && show?.downloadAllowed !== false && ep.downloadAllowed !== false && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDownloadEpisode(ep); }}
+                          disabled={downloadingEp === (ep._id || ep.id)}
+                          className="mt-2 flex items-center gap-1 text-[10px] font-bold text-foreground hover:text-emerald-400 transition-colors disabled:opacity-50"
+                        >
+                          {downloadingEp === (ep._id || ep.id) ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                          {downloadingEp === (ep._id || ep.id) ? "Adding..." : "Download"}
+                        </button>
+                      )}
                     </div>
                   </div>
                 );

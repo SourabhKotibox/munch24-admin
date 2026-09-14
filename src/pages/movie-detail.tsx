@@ -13,6 +13,7 @@ import SubscriptionPlansModal from "@/components/SubscriptionPlansModal";
 import { PortraitCard, LandscapeCard } from "@/components/ContentCard";
 import { isContentLockedForUser } from "@/lib/planAccess";
 import { ScreenAd } from "@/components/AdComponents";
+import { useAuth } from "@/contexts/AuthContext";
 
 /* ─────────────────────────────────────────────
    MAIN PAGE
@@ -25,31 +26,15 @@ export default function MovieDetailPage() {
 
   const recordShareMutation = useRecordShare();
 
-  const [user, setUser] = useState<any>(null);
+  const { user, signOut } = useAuth();
   const [plansModalOpen, setPlansModalOpen] = useState(false);
   const [dlProgress, setDlProgress] = useState<number | null>(null);
 
   const { data: detailData, isLoading } = useGetWebDetail(id || "");
   const item = detailData;
 
-  useEffect(() => {
-    const loadUser = () => {
-      try {
-        const storedUser = localStorage.getItem("appUser");
-        if (storedUser) setUser(JSON.parse(storedUser));
-        else setUser(null);
-      } catch (e) {}
-    };
-    loadUser();
-    window.addEventListener("user-updated", loadUser);
-    return () => window.removeEventListener("user-updated", loadUser);
-  }, []);
-
   const handleSignOut = () => {
-    localStorage.removeItem("appUser");
-    localStorage.removeItem("appAccessToken");
-    setUser(null);
-    window.location.reload();
+    signOut();
   };
 
   const related = detailData?.related || [];
@@ -59,6 +44,7 @@ export default function MovieDetailPage() {
   const [selectedSeason, setSelectedSeason] = useState(1);
 
   const { data: profileData } = useGetAppProfile();
+  const canDownload = (profileData?.user?.downloadAllowed ?? user?.downloadAllowed) === true;
 
   const isLiked = profileData?.likeRecords?.some((l: any) => l.contentId === id && !l.episodeId) || false;
   const toggleLikeMutation = useToggleLike();
@@ -284,61 +270,63 @@ export default function MovieDetailPage() {
           </button>
 
           {/* Download button for movie */}
-          <button
-            onClick={async () => {
-              if (!user) { setLocation("/login"); return; }
-              if (isDownloaded) {
-                removeDownloadMutation.mutate(
-                  { id: downloadRecord.id, contentId: id!, episodeId: undefined },
-                  {
-                    onSuccess: async () => {
-                      await removeOfflineVideo(id!);
-                      toast({ title: "Removed from downloads" });
-                    },
-                    onError: () => toast({ title: "Failed to remove", variant: "destructive" }),
-                  }
-                );
-              } else {
-                const contentType = (item.contentType === 'drama' ? 'drama' : item.contentType === 'series' ? 'series' : 'movie') as 'movie' | 'drama' | 'series';
-                requestDownloadMutation.mutate(
-                  { contentId: id!, contentType },
-                  {
-                    onSuccess: async (data: any) => {
-                      const downloadUrl = data?.data?.downloadUrl || data?.downloadUrl;
-                      if (downloadUrl) {
-                        setDlProgress(0);
-                        const ok = await cacheDownloadedVideo(downloadUrl, id!, undefined, setDlProgress);
-                        setDlProgress(null);
-                        toast({ title: ok ? "Downloaded — available offline" : "Saved to downloads (online only)" });
-                      } else {
-                        toast({ title: "Added to downloads" });
-                      }
-                    },
-                    onError: (err: any) => toast({ title: "Download failed", description: err?.message || "Please try again.", variant: "destructive" }),
-                  }
-                );
-              }
-            }}
-            disabled={requestDownloadMutation.isPending || removeDownloadMutation.isPending || dlProgress !== null}
-            className={`flex items-center gap-2 px-5 py-3.5 rounded-xl text-sm font-bold border-2 transition-all active:scale-95 disabled:opacity-70 ${
-              isDownloaded
-                ? "bg-emerald-500/20 border-emerald-500 text-emerald-400"
-                : "bg-white/8 border-white/20 text-foreground hover:bg-white/12 hover:border-white/35"
-            }`}
-          >
-            {requestDownloadMutation.isPending || dlProgress !== null ? (
-              dlProgress !== null && dlProgress > 0
-                ? <span className="text-xs font-bold">{dlProgress}%</span>
-                : <Loader2 className="w-4 h-4 animate-spin" />
-            ) : removeDownloadMutation.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : isDownloaded ? (
-              <Check className="w-4 h-4" />
-            ) : (
-              <Download className="w-4 h-4" />
-            )}
-            {dlProgress !== null ? "Downloading..." : isDownloaded ? "Downloaded" : "Download"}
-          </button>
+          {canDownload && item?.downloadAllowed !== false && (
+            <button
+              onClick={async () => {
+                if (!user) { setLocation("/login"); return; }
+                if (isDownloaded) {
+                  removeDownloadMutation.mutate(
+                    { id: downloadRecord.id, contentId: id!, episodeId: undefined },
+                    {
+                      onSuccess: async () => {
+                        await removeOfflineVideo(id!);
+                        toast({ title: "Removed from downloads" });
+                      },
+                      onError: () => toast({ title: "Failed to remove", variant: "destructive" }),
+                    }
+                  );
+                } else {
+                  const contentType = (item.contentType === 'drama' ? 'drama' : item.contentType === 'series' ? 'series' : 'movie') as 'movie' | 'drama' | 'series';
+                  requestDownloadMutation.mutate(
+                    { contentId: id!, contentType },
+                    {
+                      onSuccess: async (data: any) => {
+                        const downloadUrl = data?.data?.downloadUrl || data?.downloadUrl;
+                        if (downloadUrl) {
+                          setDlProgress(0);
+                          const ok = await cacheDownloadedVideo(downloadUrl, id!, undefined, setDlProgress);
+                          setDlProgress(null);
+                          toast({ title: ok ? "Downloaded — available offline" : "Saved to downloads (online only)" });
+                        } else {
+                          toast({ title: "Added to downloads" });
+                        }
+                      },
+                      onError: (err: any) => toast({ title: "Download failed", description: err?.message || "Please try again.", variant: "destructive" }),
+                    }
+                  );
+                }
+              }}
+              disabled={requestDownloadMutation.isPending || removeDownloadMutation.isPending || dlProgress !== null}
+              className={`flex items-center gap-2 px-5 py-3.5 rounded-xl text-sm font-bold border-2 transition-all active:scale-95 disabled:opacity-70 ${
+                isDownloaded
+                  ? "bg-emerald-500/20 border-emerald-500 text-emerald-400"
+                  : "bg-white/8 border-white/20 text-foreground hover:bg-white/12 hover:border-white/35"
+              }`}
+            >
+              {requestDownloadMutation.isPending || dlProgress !== null ? (
+                dlProgress !== null && dlProgress > 0
+                  ? <span className="text-xs font-bold">{dlProgress}%</span>
+                  : <Loader2 className="w-4 h-4 animate-spin" />
+              ) : removeDownloadMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : isDownloaded ? (
+                <Check className="w-4 h-4" />
+              ) : (
+                <Download className="w-4 h-4" />
+              )}
+              {dlProgress !== null ? "Downloading..." : isDownloaded ? "Downloaded" : "Download"}
+            </button>
+          )}
 
           {/* Like button */}
           <button

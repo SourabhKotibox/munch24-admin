@@ -1,21 +1,14 @@
 import { Play, Star, Crown } from "lucide-react";
 import { getImageUrl } from "@/lib/api-client";
+import { useAuth } from "@/contexts/AuthContext";
 
 // ─── Shared helpers ────────────────────────────────────────────────────────────
 
 export const HOME_CARD_CONTAINER_CLASS = "rounded-[6px] overflow-hidden border border-transparent";
 
 function BadgeTop({ item }: { item: any }) {
-  const isSubscribed = (() => {
-    try {
-      const stored = localStorage.getItem("appUser");
-      if (stored) {
-        const u = JSON.parse(stored);
-        return u.subscriptionStatus === "active" && u.subscriptionPlan !== "free";
-      }
-    } catch {}
-    return false;
-  })();
+  const { user } = useAuth();
+  const isSubscribed = user?.subscriptionStatus === "active" && user?.subscriptionPlan !== "free";
 
   const isPremium = item.isPremium || item.badge === "TOP" || item.badge === "EXCLUSIVE";
   if (isPremium && !isSubscribed) {
@@ -146,41 +139,21 @@ export function PortraitCard({
           </div>
         )}
 
-        {/* Bottom-left: TV pill for non-Home cards */}
-        {isShow && !homeStyle && (
-          <div className={`absolute ${homeStyle ? "bottom-10" : "bottom-11"} left-2 z-10`}>
-            <span className="px-1.5 py-0.5 bg-white/15 border border-white/20 text-foreground text-[9px] font-black rounded-md leading-none">
-              TV
-            </span>
-          </div>
-        )}
-
         {/* Bottom info (always visible) */}
         <div className="absolute bottom-0 left-0 right-0 px-2.5 pb-2.5 pt-6 z-10 pointer-events-none">
-          {homeStyle ? (
-            <div className="flex flex-col gap-1.5">
-              <p className="relative top-2 text-foreground font-bold text-xs truncate leading-tight">{item.title}</p>
-              {isShow && (
-                <span className="w-fit px-1.5 py-0.5 bg-white/15 border border-white/20 text-foreground text-[9px] font-black rounded-md leading-none">
-                  TV
-                </span>
-              )}
-              {(year || duration) && (
-                <p className="text-foreground/80 text-[10px] truncate">
-                  {[year, duration].filter(Boolean).join(" · ")}
-                </p>
-              )}
-            </div>
-          ) : (
-            <>
-              <p className="text-foreground font-bold text-xs truncate leading-tight">{item.title}</p>
-              {(year || duration) && (
-                <p className="text-foreground/80 text-[10px] mt-0.5 truncate">
-                  {[year, duration].filter(Boolean).join(" · ")}
-                </p>
-              )}
-            </>
-          )}
+          <div className="flex flex-col gap-1">
+            <p className="text-foreground font-bold text-xs truncate leading-tight mt-[4px]">{item.title}</p>
+            {isShow && (
+              <span className="w-fit px-1.5 py-0.5 bg-white/15 border border-white/20 text-foreground text-[9px] font-black rounded-md leading-none">
+                TV
+              </span>
+            )}
+            {(year || duration) && (
+              <p className="text-foreground/80 text-[10px] truncate">
+                {[year, duration].filter(Boolean).join(" · ")}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Play button — bottom-right corner */}
