@@ -526,7 +526,7 @@ export default function Settings() {
   const handleSaveMessageGateway = async () => {
     setSaving(true);
     try {
-      await updateMessageGatewayMutation.mutateAsync({
+      const res = await updateMessageGatewayMutation.mutateAsync({
         otpEnabled: messageGateway.otpEnabled,
         customerId: messageGateway.customerId,
         authToken: messageGateway.authToken,
@@ -535,6 +535,9 @@ export default function Settings() {
         otpLength: messageGateway.otpLength === "6 digits" ? 6 : 4,
         flow: messageGateway.flow,
       });
+      if (res?.data?.authToken !== undefined) {
+        setMessageGateway((prev) => ({ ...prev, authToken: res.data.authToken }));
+      }
       toast({ title: "Message Gateway settings saved successfully!" });
     } catch (err: any) {
       toast({ title: err?.message || "Failed to save settings", variant: "destructive" });

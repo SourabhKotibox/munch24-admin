@@ -549,6 +549,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         'bunnyStorageZone', 'bunnyAccessKey', 'bunnyCdnUrl',
         'mailUsername', 'mailPassword', 'mailHost', 'mailPort',
         'fcmServerKey', 'fcmSenderId', 'firebaseApiKey', 'firebaseProjectId', 'firebaseAppId',
+        'authToken',
       ] as const;
       let cached: Partial<AppSettings> = {};
       try {
