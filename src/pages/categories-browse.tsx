@@ -193,7 +193,6 @@ export default function CategoriesBrowsePage() {
           if (tab === "tvshows") setLocation("/tv-shows-browse");
           else { setActiveTab(tab); setLocation("/"); }
         }}
-        onSignIn={() => setLocation("/login")}
         onSignOut={handleSignOut}
         user={user}
         onSubscribeClick={() => setPlansModalOpen(true)}

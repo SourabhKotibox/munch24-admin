@@ -73,6 +73,11 @@ interface AuthContextValue {
   signOut: () => void;
   /** Update the cached user object (e.g. after profile save) */
   updateUser: (partial: Partial<AppUser>) => void;
+  /** Global standard RED Kotibox Login/Register modal state */
+  isAuthModalOpen: boolean;
+  authModalMode: "login" | "register";
+  openAuthModal: (mode?: "login" | "register") => void;
+  closeAuthModal: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -100,7 +105,18 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(readUser);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<"login" | "register">("login");
   const queryClient = useQueryClient();
+
+  const openAuthModal = useCallback((mode: "login" | "register" = "login") => {
+    setAuthModalMode(mode);
+    setIsAuthModalOpen(true);
+  }, []);
+
+  const closeAuthModal = useCallback(() => {
+    setIsAuthModalOpen(false);
+  }, []);
 
   // Single source of truth: authenticated user/profile API
   const { data: profileData } = useGetAppProfile();
@@ -158,6 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.invalidateQueries({ queryKey: ["app-profile"] });
       // Update state synchronously, then notify other tabs
       setUser(userData);
+      setIsAuthModalOpen(false);
       dispatchAuthChanged();
     },
     [queryClient]
@@ -191,7 +208,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, signIn, signOut, updateUser }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        signIn,
+        signOut,
+        updateUser,
+        isAuthModalOpen,
+        authModalMode,
+        openAuthModal,
+        closeAuthModal,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

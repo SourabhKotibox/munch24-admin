@@ -10,7 +10,8 @@ import { Layout } from "@/components/layout";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { SettingsProvider, useSettings } from "@/contexts/SettingsContext";
 import { useGetMe } from "@/lib/api-client";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import SignInModal from "@/components/SignInModal";
 
 // Helper to convert hex to HSL
 function hexToHSL(hex: string): { h: number; s: number; l: number } {
@@ -456,6 +457,16 @@ function Router() {
   );
 }
 
+function GlobalAuthModal() {
+  const { isAuthModalOpen, closeAuthModal } = useAuth();
+  return (
+    <SignInModal
+      isOpen={isAuthModalOpen}
+      onClose={closeAuthModal}
+    />
+  );
+}
+
 function App() {
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
@@ -467,6 +478,7 @@ function App() {
               <TooltipProvider>
                 <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
                   <Router />
+                  <GlobalAuthModal />
                 </WouterRouter>
                 <Toaster />
               </TooltipProvider>

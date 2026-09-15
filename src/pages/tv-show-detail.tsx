@@ -26,7 +26,7 @@ export default function TVShowDetailPage() {
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState<Tab>("tvshows");
-  const { user, signOut } = useAuth();
+  const { user, signOut, openAuthModal } = useAuth();
   const [plansModalOpen, setPlansModalOpen] = useState(false);
   const [selectedSeason, setSelectedSeason] = useState(1);
 
@@ -109,7 +109,7 @@ export default function TVShowDetailPage() {
       <PublicHeader
         activeTab={activeTab}
         setActiveTab={(t) => { setActiveTab(t); setLocation("/"); }}
-        onSignIn={() => {}}
+        onSignIn={() => openAuthModal("login")}
         onSignOut={handleSignOut}
         user={user}
         onSubscribeClick={() => setPlansModalOpen(true)}

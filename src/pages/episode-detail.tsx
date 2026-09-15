@@ -955,14 +955,14 @@ function LockPopup({ episodeNum, onClose, onSubscribed }: { episodeNum: number; 
   const { toast } = useToast();
   const { data: plansData, isLoading: loadingPlans } = useGetWebSubscriptionPlans();
   const createSubMutation = useCreateSubscription();
-  const { user } = useAuth();
+  const { user, openAuthModal } = useAuth();
 
   const plans = plansData?.data || [];
 
   const handleSubscribe = async (plan: any) => {
     if (!user) {
       toast({ title: "Authentication Required", description: "Please login first to subscribe.", variant: "destructive" });
-      window.location.href = "/login";
+      openAuthModal("login");
       return;
     }
     try {
@@ -1076,7 +1076,7 @@ export default function EpisodeDetailPage() {
   const params = useParams<{ showTitle: string; epNum: string }>();
   const [, navigate] = useLocation();
 
-  const { user, signOut } = useAuth();
+  const { user, signOut, openAuthModal } = useAuth();
   const [playerStarted, setPlayerStarted] = useState(false);
 
   useEffect(() => {
@@ -1190,7 +1190,7 @@ export default function EpisodeDetailPage() {
   const [dlProgress, setDlProgress] = useState<number | null>(null);
 
   const handleDownloadToggle = useCallback((epNum: number) => {
-    if (!user) { navigate("/login"); return; }
+    if (!user) { openAuthModal("login"); return; }
 
     const isMovieOrSeries = epNum === 0 || apiEpisodes.length === 0;
 
@@ -1344,7 +1344,7 @@ export default function EpisodeDetailPage() {
           else if (tab === "tvshows") navigate("/tv-shows-browse");
           else navigate(`/browse/${tab}`);
         }}
-        onSignIn={() => navigate("/login")}
+        onSignIn={() => openAuthModal("login")}
         onSignOut={handleSignOut}
         user={user}
       />
@@ -1437,7 +1437,7 @@ export default function EpisodeDetailPage() {
                 {/* Like Button */}
                 <button
                   onClick={() => {
-                    if (!user) { navigate("/login"); return; }
+                    if (!user) { openAuthModal("login"); return; }
                     const contentType = (showData?.contentType === 'drama' ? 'drama' : showData?.contentType === 'series' ? 'show' : 'movie') as 'show' | 'movie' | 'drama';
                     const payload = isMovieOrSeries
                       ? { contentId, contentType }
@@ -1463,7 +1463,7 @@ export default function EpisodeDetailPage() {
                 {/* Watchlist Button */}
                 <button
                   onClick={() => {
-                    if (!user) { navigate("/login"); return; }
+                    if (!user) { openAuthModal("login"); return; }
                     toggleWishlistMutation.mutate(
                       { contentId, contentType: (showData?.contentType || "show") as "movie" | "show" | "drama" },
                       {
@@ -1707,7 +1707,7 @@ export default function EpisodeDetailPage() {
           <div className="px-4 sm:px-6 lg:px-10 mt-12 border-t border-zinc-900 pt-10">
             <WebsiteReviews 
               user={user} 
-              onSignInRequired={() => navigate("/login")} 
+              onSignInRequired={() => openAuthModal("login")} 
             />
           </div>
         </div>

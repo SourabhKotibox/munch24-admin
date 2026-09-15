@@ -18,6 +18,7 @@ import {
   Eye,
   EyeOff,
   Crown,
+  Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +44,17 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useDeleteAccount, useUpdateSettings, useUploadSettingsLogos, useGetEmailStatus, useTestEmail, getImageUrl, applyStorageCors } from "@/lib/api-client";
+import {
+  useDeleteAccount,
+  useUpdateSettings,
+  useUploadSettingsLogos,
+  useGetEmailStatus,
+  useTestEmail,
+  getImageUrl,
+  applyStorageCors,
+  useGetMessageGatewaySettings,
+  useUpdateMessageGatewaySettings,
+} from "@/lib/api-client";
 import { useSettings, applyColorTheme, applyBodyClasses } from "@/contexts/SettingsContext";
 import { useTheme } from "next-themes";
 import MediaPicker from "@/components/MediaPicker";
@@ -53,6 +64,7 @@ const SECTIONS = [
   { id: "misc", label: "Misc Settings", icon: SlidersHorizontal },
   { id: "customization", label: "Customization", icon: Paintbrush },
   { id: "mail", label: "Mail Settings", icon: Mail },
+  { id: "message-gateway", label: "Message Gateway", icon: Smartphone },
   { id: "currency", label: "Currency Settings", icon: DollarSign },
   { id: "payment", label: "Payment Settings", icon: CreditCard },
   { id: "subscription", label: "Subscription Settings", icon: Crown },
@@ -137,8 +149,19 @@ export default function Settings() {
   const uploadLogosMutation = useUploadSettingsLogos();
   const { data: emailStatus, refetch: refetchEmailStatus } = useGetEmailStatus();
   const testEmailMutation = useTestEmail();
+  const { data: mgData } = useGetMessageGatewaySettings();
+  const updateMessageGatewayMutation = useUpdateMessageGatewaySettings();
   const { resolvedTheme, setTheme } = useTheme();
-  const [activeSection, setActiveSection] = useState<SectionId>("business");
+  const [activeSection, setActiveSection] = useState<SectionId>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab") as SectionId;
+      if (tab && SECTIONS.some((s) => s.id === tab)) {
+        return tab;
+      }
+    }
+    return "business";
+  });
   const [saving, setSaving] = useState(false);
   const seoImageRef = useRef<HTMLInputElement>(null);
   const lightLogoRef = useRef<HTMLInputElement>(null);
@@ -152,6 +175,7 @@ export default function Settings() {
       case "misc": return handleSaveMisc();
       case "customization": return handleSaveCustomization();
       case "mail": return handleSaveMail();
+      case "message-gateway": return handleSaveMessageGateway();
       case "currency": return handleSaveCurrency();
       case "payment": return handleSavePayment();
       case "subscription": return handleSaveSubscription();
@@ -474,7 +498,50 @@ export default function Settings() {
     }
   };
 
+  // ── Message Gateway Settings ───────────────────────────────────────────
+  const [messageGateway, setMessageGateway] = useState({
+    otpEnabled: false,
+    customerId: "",
+    authToken: "",
+    baseUrl: "https://cpaas.messagecentral.com",
+    countryCode: "91",
+    otpLength: "4 digits",
+    flow: "SMS",
+  });
 
+  useEffect(() => {
+    if (mgData) {
+      setMessageGateway({
+        otpEnabled: Boolean(mgData.otpEnabled),
+        customerId: mgData.customerId || "",
+        authToken: mgData.authToken || "",
+        baseUrl: mgData.baseUrl || "https://cpaas.messagecentral.com",
+        countryCode: mgData.countryCode || "91",
+        otpLength: mgData.otpLength === 6 ? "6 digits" : "4 digits",
+        flow: mgData.flow || "SMS",
+      });
+    }
+  }, [mgData]);
+
+  const handleSaveMessageGateway = async () => {
+    setSaving(true);
+    try {
+      await updateMessageGatewayMutation.mutateAsync({
+        otpEnabled: messageGateway.otpEnabled,
+        customerId: messageGateway.customerId,
+        authToken: messageGateway.authToken,
+        baseUrl: messageGateway.baseUrl,
+        countryCode: messageGateway.countryCode,
+        otpLength: messageGateway.otpLength === "6 digits" ? 6 : 4,
+        flow: messageGateway.flow,
+      });
+      toast({ title: "Message Gateway settings saved successfully!" });
+    } catch (err: any) {
+      toast({ title: err?.message || "Failed to save settings", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // ── Currency Settings ──────────────────────────────────────────────────
   const [currency, setCurrency] = useState({
@@ -1872,12 +1939,167 @@ export default function Settings() {
     </div>
   );
 
+  const renderMessageGateway = () => (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Top toggle bar matching screenshot */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-0.5">
+          <h3 className="text-base font-semibold text-foreground">
+            Enable OTP gateway
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Send real SMS OTPs when keys below are saved.
+          </p>
+        </div>
+        <Switch
+          checked={messageGateway.otpEnabled}
+          onCheckedChange={(checked) =>
+            setMessageGateway((prev) => ({ ...prev, otpEnabled: checked }))
+          }
+          className="data-[state=checked]:bg-primary"
+        />
+      </div>
+
+      {/* Key-Value Table Container */}
+      <div className="rounded-lg border border-border overflow-hidden bg-card/30">
+        {/* Table Header */}
+        <div className="flex items-center px-6 py-3 bg-muted/40 border-b border-border text-sm font-semibold text-foreground">
+          <div className="w-full md:w-72 lg:w-80 flex-shrink-0">Key</div>
+          <div className="flex-1">Value</div>
+        </div>
+
+        {/* Table Body */}
+        <div className="divide-y divide-border">
+          {/* Customer ID */}
+          <div className="flex flex-col md:flex-row md:items-center px-6 py-4 gap-2 md:gap-6">
+            <div className="w-full md:w-72 lg:w-80 flex-shrink-0">
+              <div className="text-sm font-medium text-foreground">Customer ID</div>
+              <div className="text-xs text-muted-foreground mt-0.5">Starts with C-</div>
+            </div>
+            <div className="flex-1">
+              <Input
+                value={messageGateway.customerId}
+                onChange={(e) =>
+                  setMessageGateway((prev) => ({ ...prev, customerId: e.target.value }))
+                }
+                placeholder="C-XXXXXXXX"
+                className={inputCls}
+              />
+            </div>
+          </div>
+
+          {/* Auth Token */}
+          <div className="flex flex-col md:flex-row md:items-center px-6 py-4 gap-2 md:gap-6">
+            <div className="w-full md:w-72 lg:w-80 flex-shrink-0">
+              <div className="text-sm font-medium text-foreground">Auth Token</div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                Paste JWT from console (eyJ...)
+              </div>
+            </div>
+            <div className="flex-1">
+              <SecretInput
+                value={messageGateway.authToken}
+                onChange={(e) =>
+                  setMessageGateway((prev) => ({ ...prev, authToken: e.target.value }))
+                }
+                placeholder="eyJhbGciOiJIUzI1NiJ9..."
+                className={`${inputCls} font-mono`}
+              />
+            </div>
+          </div>
+
+          {/* Base URL */}
+          <div className="flex flex-col md:flex-row md:items-center px-6 py-4 gap-2 md:gap-6">
+            <div className="w-full md:w-72 lg:w-80 flex-shrink-0">
+              <div className="text-sm font-medium text-foreground">Base URL</div>
+            </div>
+            <div className="flex-1">
+              <Input
+                value={messageGateway.baseUrl}
+                onChange={(e) =>
+                  setMessageGateway((prev) => ({ ...prev, baseUrl: e.target.value }))
+                }
+                placeholder="https://cpaas.messagecentral.com"
+                className={inputCls}
+              />
+            </div>
+          </div>
+
+          {/* Country Code */}
+          <div className="flex flex-col md:flex-row md:items-center px-6 py-4 gap-2 md:gap-6">
+            <div className="w-full md:w-72 lg:w-80 flex-shrink-0">
+              <div className="text-sm font-medium text-foreground">Country Code</div>
+            </div>
+            <div className="flex-1">
+              <Input
+                value={messageGateway.countryCode}
+                onChange={(e) =>
+                  setMessageGateway((prev) => ({ ...prev, countryCode: e.target.value }))
+                }
+                placeholder="91"
+                className={inputCls}
+              />
+            </div>
+          </div>
+
+          {/* OTP Length */}
+          <div className="flex flex-col md:flex-row md:items-center px-6 py-4 gap-2 md:gap-6">
+            <div className="w-full md:w-72 lg:w-80 flex-shrink-0">
+              <div className="text-sm font-medium text-foreground">OTP Length</div>
+            </div>
+            <div className="flex-1">
+              <Select
+                value={messageGateway.otpLength}
+                onValueChange={(val) =>
+                  setMessageGateway((prev) => ({ ...prev, otpLength: val }))
+                }
+              >
+                <SelectTrigger className={inputCls}>
+                  <SelectValue placeholder="Select OTP Length" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border text-foreground">
+                  <SelectItem value="4 digits">4 digits</SelectItem>
+                  <SelectItem value="6 digits">6 digits</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Flow */}
+          <div className="flex flex-col md:flex-row md:items-center px-6 py-4 gap-2 md:gap-6">
+            <div className="w-full md:w-72 lg:w-80 flex-shrink-0">
+              <div className="text-sm font-medium text-foreground">Flow</div>
+            </div>
+            <div className="flex-1">
+              <Select
+                value={messageGateway.flow}
+                onValueChange={(val) =>
+                  setMessageGateway((prev) => ({ ...prev, flow: val }))
+                }
+              >
+                <SelectTrigger className={inputCls}>
+                  <SelectValue placeholder="Select Flow" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border text-foreground">
+                  <SelectItem value="SMS">SMS</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <SaveBtn saving={saving || updateMessageGatewayMutation.isPending} onClick={handleSaveMessageGateway} />
+    </div>
+  );
+
   const renderSection = () => {
     switch (activeSection) {
       case "business": return renderBusiness();
       case "misc": return renderMisc();
       case "customization": return renderCustomization();
       case "mail": return renderMail();
+      case "message-gateway": return renderMessageGateway();
       case "currency": return renderCurrency();
       case "payment": return renderPayment();
       case "subscription": return renderSubscription();

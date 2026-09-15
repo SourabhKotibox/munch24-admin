@@ -1797,6 +1797,51 @@ export const useTestEmail = () => {
   });
 };
 
+// Message Gateway Settings
+export interface MessageGatewaySettingsData {
+  otpEnabled: boolean;
+  customerId: string;
+  authToken: string;
+  hasAuthToken?: boolean;
+  baseUrl: string;
+  countryCode: string;
+  otpLength: number;
+  flow: string;
+}
+
+export const getMessageGatewaySettings = async (): Promise<MessageGatewaySettingsData> => {
+  const response = await api("/settings/message-gateway", { useAdminToken: true });
+  return response.data;
+};
+
+export const updateMessageGatewaySettingsData = async (data: Partial<MessageGatewaySettingsData>) => {
+  const response = await api("/settings/message-gateway", {
+    method: "PUT",
+    body: JSON.stringify(data),
+    useAdminToken: true,
+  });
+  return response.data;
+};
+
+export const useGetMessageGatewaySettings = () => {
+  return useQuery({
+    queryKey: ["message-gateway-settings"],
+    queryFn: getMessageGatewaySettings,
+    retry: 1,
+  });
+};
+
+export const useUpdateMessageGatewaySettings = () => {
+  const queryClient = useQueryClient();
+  return useMutation<any, Error, Partial<MessageGatewaySettingsData>>({
+    mutationFn: (data) => updateMessageGatewaySettingsData(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["message-gateway-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+};
+
 // Genres
 export const getGenres = async (options?: { page?: number; limit?: number; admin?: boolean }) => {
   const params = new URLSearchParams();
@@ -3445,6 +3490,19 @@ export const useGetTransactions = () => {
 
 export const loginClient = async (data: { email: string; password: string }) => { return api('/app/auth/login', { method: 'POST', body: JSON.stringify(data) }); };
 export const registerClient = async (data: { email: string; password: string; name: string; phone?: string }) => { return api('/app/auth/register', { method: 'POST', body: JSON.stringify(data) }); };
+
+// ── OTP Auth ──────────────────────────────────────────────────────────────────
+/** Send an OTP to the given 10-digit mobile number via MessageCentral. */
+export const sendOtpApp = async (mobileNumber: string) =>
+  api('/app/auth/send-otp', { method: 'POST', body: JSON.stringify({ mobileNumber }) });
+
+/** Verify an OTP. Pass the verificationId returned by sendOtpApp and the code the user entered. */
+export const verifyOtpApp = async (data: {
+  mobileNumber: string;
+  verificationId: string;
+  otp: string;
+}) => api('/app/auth/verify-otp', { method: 'POST', body: JSON.stringify(data) });
+
 
 // Countries API
 export const getCountries = async (options?: { page?: number; limit?: number; admin?: boolean }) => {

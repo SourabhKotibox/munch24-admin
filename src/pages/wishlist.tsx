@@ -48,7 +48,6 @@ export default function WishlistPage() {
           else if (tab === "tvshows") setLocation("/tv-shows-browse");
           else setLocation(`/browse/${tab}`);
         }}
-        onSignIn={() => setLocation("/login")}
         onSignOut={handleSignOut}
         user={user}
       />

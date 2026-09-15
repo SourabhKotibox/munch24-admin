@@ -15,12 +15,14 @@ import {
   useGetWebHome, useGetWebBrowse, loginClient, registerClient, useGetPages,
   useGetGenres, useGetPublicNotifications, useGetWebSubscriptionPlans,
   useGetWatchHistory, useGetSections, useGetWebAllContent,
+  sendOtpApp, verifyOtpApp,
 } from "@/lib/api-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { WebsiteReviews } from "@/components/WebsiteReviews";
 import { HOME_CARD_CONTAINER_CLASS, PortraitCard, LandscapeCard } from "@/components/ContentCard";
 import SubscriptionPlansModal from "@/components/SubscriptionPlansModal";
 import { useAuth, formatPlanName } from "@/contexts/AuthContext";
+import SignInModal from "@/components/SignInModal";
 
 /* ─── TYPES ─── */
 interface ContentItem {
@@ -1058,224 +1060,9 @@ function UserDropdown({ onSignIn, onSignOut, user }: { onSignIn: () => void; onS
             onClick={onSignIn}
             className="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl text-xs transition-all text-center shadow-md shadow-red-900/20"
           >
-            Log In / Register
+            Log In
           </button>
         )}
-      </div>
-    </div>
-  );
-}
-
-/* ─── SIGN IN MODAL ─── */
-function SignInModal({ onClose }: { onClose: () => void }) {
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [usePhone, setUsePhone] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const { settings } = useSettings();
-  const { resolvedTheme } = useTheme();
-  const { signIn } = useAuth();
-
-  const getLogoUrl = () => {
-    if (resolvedTheme === "dark" && settings.darkLogoUrl) return getImageUrl(settings.darkLogoUrl);
-    if (resolvedTheme === "light" && settings.lightLogoUrl) return getImageUrl(settings.lightLogoUrl);
-    return settings.logoUrl ? getImageUrl(settings.logoUrl) : "";
-  };
-  const logoUrl = getLogoUrl();
-
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-    try {
-      if (isLogin) {
-        // Phone login: pass phone number as the email field — server handles phone vs email
-        const loginIdentifier = usePhone ? phone : email;
-        const res = await loginClient({ email: loginIdentifier, password });
-        const userData = {
-          id: res.userId,
-          name: res.name || email.split("@")[0],
-          avatar: res.avatar || null,
-          subscriptionPlan: res.subscriptionPlan || "free",
-          subscriptionStatus: res.subscriptionStatus || "inactive",
-        };
-        signIn(userData, res.accessToken);
-        onClose();
-      } else {
-        const res = await registerClient({ email, password, name, phone: phone || undefined });
-        const userData = {
-          id: res.userId,
-          name,
-          avatar: res.avatar || null,
-          subscriptionPlan: res.subscriptionPlan || "free",
-          subscriptionStatus: res.subscriptionStatus || "inactive",
-        };
-        signIn(userData, res.accessToken);
-        onClose();
-      }
-    } catch (err: any) {
-      setError(err.message || "An error occurred");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={onClose} />
-
-      <div className="relative z-10 w-full max-w-[520px] bg-[#0c0c14] border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl flex max-h-[92vh]">
-        <div className="hidden sm:flex w-[180px] flex-shrink-0 relative overflow-hidden bg-black flex-col justify-between p-6">
-          <div className="absolute inset-0 bg-gradient-to-br from-red-600/30 via-black/90 to-[#030306]/95 z-0" />
-          <div className="relative z-10 flex flex-col items-center justify-center h-full gap-3">
-            {logoUrl ? (
-              <img
-                src={logoUrl}
-                alt={settings.platformName || "StreamIT"}
-                style={
-                  getResponsiveLogoStyle(
-                    resolvedTheme === "dark" && settings.darkLogoUrl
-                      ? settings.darkLogoWidth
-                      : resolvedTheme === "light" && settings.lightLogoUrl
-                      ? settings.lightLogoWidth
-                      : undefined
-                  )
-                }
-                className="h-16 w-auto object-contain drop-shadow-2xl"
-              />
-            ) : (
-              <>
-                <div className="w-12 h-12 rounded-2xl bg-red-600 flex items-center justify-center shadow-lg shadow-red-600/50">
-                  <Play className="w-6 h-6 text-white fill-white ml-0.5" />
-                </div>
-                <span className="text-white font-bold text-[15px] tracking-tight mt-2">{settings.platformName || "StreamIT"}</span>
-              </>
-            )}
-            <p className="text-[10px] text-white/80 text-center font-medium mt-3 leading-relaxed">Your portal to premium cinematic experiences.</p>
-          </div>
-        </div>
-
-        <div className="flex-1 flex flex-col p-8 overflow-y-auto">
-          <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full text-white hover:text-white hover:bg-white/5 transition-all z-10">
-            <X className="w-4 h-4" />
-          </button>
-
-          <h2 className="text-white font-bold text-xl sm:text-2xl tracking-tight mb-1 pr-6">{isLogin ? "Welcome Back" : "Create Account"}</h2>
-          <p className="text-white text-xs sm:text-sm mb-6 font-medium">
-            {isLogin ? "New to the platform? " : "Already have an account? "}
-            <button onClick={() => setIsLogin(!isLogin)} className="text-red-500 hover:underline font-bold transition-all">
-              {isLogin ? "Sign Up Free" : "Log In"}
-            </button>
-          </p>
-
-          {error && <div className="mb-4 p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-xs font-semibold leading-snug">{error}</div>}
-
-          {/* Phone / Email toggle for login */}
-          {isLogin && (
-            <div className="flex gap-1 mb-1 bg-zinc-900/60 rounded-full p-1">
-              <button
-                type="button"
-                onClick={() => setUsePhone(false)}
-                className={`flex-1 py-1.5 rounded-full text-[11px] font-bold transition-all ${!usePhone ? "bg-red-600 text-white" : "text-white hover:text-white"}`}
-              >Email</button>
-              <button
-                type="button"
-                onClick={() => setUsePhone(true)}
-                className={`flex-1 py-1.5 rounded-full text-[11px] font-bold transition-all ${usePhone ? "bg-red-600 text-white" : "text-white hover:text-white"}`}
-              >Phone</button>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
-            {!isLogin && (
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Full Name"
-                className="w-full bg-zinc-900 border border-zinc-800 text-white placeholder:text-white/80 px-4 py-3 rounded-xl text-xs font-semibold focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 transition-all"
-              />
-            )}
-
-            {/* Email field — shown in register, or in login when not using phone */}
-            {(!isLogin || !usePhone) && (
-              <input
-                type={isLogin ? "text" : "email"}
-                required={!usePhone}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email Address"
-                className="w-full bg-zinc-900 border border-zinc-800 text-white placeholder:text-white/80 px-4 py-3 rounded-xl text-xs font-semibold focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 transition-all"
-              />
-            )}
-
-            {/* Phone field — always shown in register (optional), or in login when phone tab active */}
-            {(usePhone || !isLogin) && (
-              <input
-                type="tel"
-                required={usePhone && isLogin}
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder={isLogin ? "Phone Number" : "Phone Number (optional — links app account)"}
-                className="w-full bg-zinc-900 border border-zinc-800 text-white placeholder:text-white/80 px-4 py-3 rounded-xl text-xs font-semibold focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 transition-all"
-              />
-            )}
-
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                className="w-full bg-zinc-900 border border-zinc-800 text-white placeholder:text-white/80 px-4 py-3 rounded-xl text-xs font-semibold focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 transition-all pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white hover:text-white transition-colors"
-              >
-                {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              </button>
-            </div>
-            <button disabled={loading} type="submit" className="w-full mt-2 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-full transition-all text-xs flex justify-center items-center h-[44px] shadow-lg shadow-red-900/20 hover:-translate-y-0.5 active:translate-y-0">
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isLogin ? "Log In" : "Register")}
-            </button>
-          </form>
-
-          <div className="mt-6 space-y-4">
-            <div className="flex items-center gap-3 text-white/80 text-[10px] font-bold uppercase tracking-widest">
-              <div className="flex-1 h-px bg-zinc-800" />
-              <span>Or connect with</span>
-              <div className="flex-1 h-px bg-zinc-800" />
-            </div>
-            <div className="flex items-center gap-2">
-              <button className="flex-1 py-2 bg-zinc-950 border border-zinc-800 text-white/80 hover:text-white rounded-full text-[11px] font-bold transition-all hover:bg-zinc-900 flex items-center justify-center gap-1.5">
-                Google
-              </button>
-              <button className="flex-1 py-2 bg-zinc-950 border border-zinc-800 text-white/80 hover:text-white rounded-full text-[11px] font-bold transition-all hover:bg-zinc-900 flex items-center justify-center gap-1.5">
-                Apple
-              </button>
-            </div>
-          </div>
-
-          <p className="text-white/80 text-[10px] text-center leading-relaxed mt-6 font-medium">
-            By continuing, you accept our <a href="#" className="text-white/80 hover:underline">Terms of Service</a> & <a href="#" className="text-white/80 hover:underline">Privacy Policy</a>.
-          </p>
-        </div>
       </div>
     </div>
   );
@@ -1293,9 +1080,10 @@ const NAV_TABS: { label: string; tab: Tab; icon: React.ReactNode }[] = [
 export function PublicHeader({ activeTab, setActiveTab, onSignIn, onSignOut, user: propUser, onSubscribeClick }: {
   activeTab: Tab; setActiveTab: (t: Tab) => void; onSignIn?: () => void; onSignOut?: () => void; user?: any; onSubscribeClick?: () => void;
 }) {
-  const { user: authUser, signOut: authSignOut } = useAuth();
+  const { user: authUser, signOut: authSignOut, openAuthModal } = useAuth();
   const user = propUser !== undefined ? propUser : authUser;
   const effectiveSignOut = onSignOut || authSignOut;
+  const effectiveSignIn = onSignIn || (() => openAuthModal("login"));
   const [scrolled, setScrolled] = useState(false);
   const isSubscribed = user?.subscriptionStatus === "active" && !!user?.subscriptionPlan && user?.subscriptionPlan.toLowerCase() !== "free";
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -1541,7 +1329,7 @@ export function PublicHeader({ activeTab, setActiveTab, onSignIn, onSignOut, use
                   )}
                   <ChevronDown className={`w-3 h-3 text-white/80 hidden sm:block transition-transform duration-200 ${userDropdownOpen ? "rotate-180" : ""}`} />
                 </button>
-                {userDropdownOpen && <UserDropdown onSignIn={onSignIn} onSignOut={effectiveSignOut} user={user} />}
+                {userDropdownOpen && <UserDropdown onSignIn={effectiveSignIn} onSignOut={effectiveSignOut} user={user} />}
               </div>
 
               <button className="lg:hidden ml-0.5 w-9 h-9 flex items-center justify-center text-white hover:text-white rounded-full hover:bg-white/5 transition-all" onClick={() => setMobileOpen(!mobileOpen)}>

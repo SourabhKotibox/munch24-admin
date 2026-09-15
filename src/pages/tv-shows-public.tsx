@@ -140,7 +140,6 @@ export default function TvShowsPublicPage() {
           else if (tab === "drama") setLocation("/browse?type=drama");
           else if (tab === "new") setLocation("/browse?type=new");
         }}
-        onSignIn={() => setLocation("/login")}
         onSignOut={handleSignOut}
         user={user}
         onSubscribeClick={() => setPlansModalOpen(true)}

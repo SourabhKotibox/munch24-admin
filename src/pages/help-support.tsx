@@ -35,7 +35,6 @@ export default function HelpSupportPage() {
           else if (tab === "tvshows") setLocation("/tv-shows-browse");
           else setLocation(`/browse/${tab}`);
         }}
-        onSignIn={() => setLocation("/login")}
         onSignOut={handleSignOut}
         user={user}
       />

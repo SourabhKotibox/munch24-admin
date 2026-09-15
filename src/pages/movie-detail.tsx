@@ -26,7 +26,7 @@ export default function MovieDetailPage() {
 
   const recordShareMutation = useRecordShare();
 
-  const { user, signOut } = useAuth();
+  const { user, signOut, openAuthModal } = useAuth();
   const [plansModalOpen, setPlansModalOpen] = useState(false);
   const [dlProgress, setDlProgress] = useState<number | null>(null);
 
@@ -94,7 +94,7 @@ export default function MovieDetailPage() {
           else if (tab === "tvshows") setLocation("/tv-shows-browse");
           else setLocation(`/browse/${tab}`);
         }}
-        onSignIn={() => setLocation("/login")}
+        onSignIn={() => openAuthModal("login")}
         onSignOut={handleSignOut}
         user={user}
       />
@@ -238,7 +238,7 @@ export default function MovieDetailPage() {
 
           <button
             onClick={() => {
-              if (!user) { setLocation("/login"); return; }
+              if (!user) { openAuthModal("login"); return; }
               const contentType = item.contentType === 'drama' ? 'drama' : item.contentType === 'series' ? 'show' : 'movie';
               toggleWishlistMutation.mutate(
                 { contentId: id!, contentType },
@@ -273,7 +273,7 @@ export default function MovieDetailPage() {
           {canDownload && item?.downloadAllowed !== false && (
             <button
               onClick={async () => {
-                if (!user) { setLocation("/login"); return; }
+                if (!user) { openAuthModal("login"); return; }
                 if (isDownloaded) {
                   removeDownloadMutation.mutate(
                     { id: downloadRecord.id, contentId: id!, episodeId: undefined },
@@ -331,7 +331,7 @@ export default function MovieDetailPage() {
           {/* Like button */}
           <button
             onClick={() => {
-              if (!user) { setLocation("/login"); return; }
+              if (!user) { openAuthModal("login"); return; }
               const contentType = item.contentType === 'drama' ? 'drama' : item.contentType === 'series' ? 'show' : 'movie';
               toggleLikeMutation.mutate({ contentId: id!, contentType });
             }}

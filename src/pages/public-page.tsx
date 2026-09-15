@@ -77,7 +77,6 @@ export default function PublicPagePage() {
           if (tab === "tvshows") setLocation("/tv-shows-browse");
           else setLocation("/");
         }}
-        onSignIn={() => setLocation("/login")}
         onSignOut={handleSignOut}
         user={user}
         onSubscribeClick={() => setPlansModalOpen(true)}
