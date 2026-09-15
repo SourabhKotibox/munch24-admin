@@ -634,6 +634,21 @@ export default function Settings() {
         bunnyCdnUrl: savedSettings.bunnyCdnUrl ?? storage.bunnyCdnUrl,
       });
       toast({ title: "Storage settings saved!" });
+      const driver = savedSettings.storageDriver ?? storage.storageDriver;
+      if (driver === "digitalocean" || driver === "s3") {
+        try {
+          const corsResult = await applyStorageCors();
+          if (corsResult?.data?.message) {
+            toast({ title: corsResult.data.message });
+          }
+        } catch (corsError: any) {
+          toast({
+            title: "Storage saved, but Spaces CORS still needs enabling",
+            description: corsError?.message || "Click Enable browser direct uploads (CORS)",
+            variant: "destructive",
+          });
+        }
+      }
     } catch (err: any) {
       toast({ title: err?.message || "Save failed", variant: "destructive" });
     } finally {

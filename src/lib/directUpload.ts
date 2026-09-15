@@ -27,6 +27,7 @@ type ProgressCb = (progress: DirectUploadProgress) => void;
 
 const CONCURRENCY = Math.max(1, Number(import.meta.env.VITE_UPLOAD_PART_CONCURRENCY || 4));
 const STORAGE_PREFIX = "munch24-direct-upload:";
+const PROXY_MAX_BYTES = 50 * 1024 * 1024;
 
 const apiBase = () => import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -117,11 +118,7 @@ const putPart = (
     });
     xhr.addEventListener("load", () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        const etag = xhr.getResponseHeader("ETag");
-        if (!etag) {
-          reject(new Error("DigitalOcean did not return an ETag for this part"));
-          return;
-        }
+        const etag = xhr.getResponseHeader("ETag") || xhr.getResponseHeader("etag") || "";
         resolve(etag);
       } else {
         reject(new Error(`Part upload failed (${xhr.status})`));
@@ -235,13 +232,26 @@ const uploadSingleDirect = async (
       signal,
     });
   } catch (error: any) {
-    if (isDirectUploadUnavailable(error)) {
+    if (isDirectUploadUnavailable(error) && file.size <= PROXY_MAX_BYTES) {
       return (await proxyUpload(folderId, [file], source, onProgress, signal)).data[0];
+    }
+    if (isDirectUploadUnavailable(error)) {
+      throw new Error(
+        "Direct upload to DigitalOcean Spaces is unavailable. Large movies cannot go through the API server (disk full / ENOSPC). Rebuild/restart the API and enable Spaces CORS in Settings → Storage."
+      );
     }
     throw error;
   }
 
   if (init.data?.mode === "proxy") {
+    const streamsToCloud = Boolean(init.data?.streamToCloud);
+    if (file.size > PROXY_MAX_BYTES && !streamsToCloud) {
+      throw new Error(
+        init.data?.reason
+          ? `${init.data.reason}. Large movies must upload directly to DigitalOcean Spaces, not the API server disk.`
+          : "Large movies must upload directly to DigitalOcean Spaces. Local/proxy upload would fill the server disk."
+      );
+    }
     return (await proxyUpload(folderId, [file], source, onProgress, signal)).data[0];
   }
 
@@ -348,12 +358,14 @@ export const uploadFilesDirect = async (
       if (abortSignal.aborted || error?.message === "Upload cancelled") throw error;
       const message = String(error?.message || "").toLowerCase();
       const canProxy =
-        error?.status === 404 ||
-        message.includes("etag") ||
-        message.includes("network") ||
-        message.includes("cors") ||
-        message.includes("not found") ||
-        message.includes("failed to fetch");
+        file.size <= PROXY_MAX_BYTES &&
+        (
+          error?.status === 404 ||
+          message.includes("network") ||
+          message.includes("cors") ||
+          message.includes("not found") ||
+          message.includes("failed to fetch")
+        );
       if (canProxy) {
         const stored = localStorage.getItem(resumeKey(folderId, file));
         if (stored) {
