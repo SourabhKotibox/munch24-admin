@@ -357,7 +357,7 @@ export default function UserProfilePage() {
       refetchProfile();
       setToast("Profile updated successfully");
     } catch (e: any) {
-      setToast("Failed to update profile");
+      setToast(e?.message || "Failed to update profile");
     } finally {
       setEditSaving(false);
     }
