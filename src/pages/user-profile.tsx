@@ -102,17 +102,22 @@ function ProfileSelectScreen({ mainUserName, profileLimitCount, userId, onSelect
 
   useEffect(() => {
     if (!userId) return;
+    const effectiveName = mainUserName?.trim() || "User";
     try {
       const stored = localStorage.getItem(storageKey);
       if (stored) {
         const parsed: OttProfile[] = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setProfiles(parsed);
+          const updated = parsed.map((p) =>
+            p.isMain || p.id === "main" ? { ...p, name: effectiveName } : p
+          );
+          setProfiles(updated);
+          localStorage.setItem(storageKey, JSON.stringify(updated));
           return;
         }
       }
     } catch {}
-    const main: OttProfile = { id: "main", name: mainUserName || "Me", color: PROFILE_COLORS[0], isMain: true };
+    const main: OttProfile = { id: "main", name: effectiveName, color: PROFILE_COLORS[0], isMain: true };
     localStorage.setItem(storageKey, JSON.stringify([main]));
     setProfiles([main]);
   }, [mainUserName, userId, storageKey]);
@@ -318,9 +323,15 @@ export default function UserProfilePage() {
     // Load active profile from localStorage (profile-switching is localStorage-only)
     try {
       const savedProfile = localStorage.getItem("ott_active_profile");
-      if (savedProfile) setActiveProfile(JSON.parse(savedProfile));
+      if (savedProfile) {
+        const parsed = JSON.parse(savedProfile);
+        if (parsed.isMain || parsed.id === "main") {
+          parsed.name = profileData?.user?.name || user?.name || parsed.name || "User";
+        }
+        setActiveProfile(parsed);
+      }
     } catch {}
-  }, []);
+  }, [profileData, user]);
 
   useEffect(() => {
     const handleProfileChanged = () => { refetchWishlist(); refetchDownloads(); };
@@ -353,7 +364,10 @@ export default function UserProfilePage() {
     if (!editName.trim()) return;
     setEditSaving(true);
     try {
-      await updateAppProfile({ name: editName, email: editEmail, phone: editPhone });
+      const res = await updateAppProfile({ name: editName, email: editEmail, phone: editPhone });
+      if (res?.data) {
+        updateUser(res.data);
+      }
       refetchProfile();
       setToast("Profile updated successfully");
     } catch (e: any) {
@@ -458,7 +472,8 @@ export default function UserProfilePage() {
   }
 
   if (!activeProfile) {
-    return <ProfileSelectScreen mainUserName={user.name} profileLimitCount={user.profileLimitCount || 1} userId={user.id || user._id || ""} onSelect={(profile) => { setActiveProfile(profile); window.dispatchEvent(new Event('profile-changed')); }} />;
+    const currentName = profileData?.user?.name || user.name || "User";
+    return <ProfileSelectScreen mainUserName={currentName} profileLimitCount={user.profileLimitCount || 1} userId={user.id || user._id || ""} onSelect={(profile) => { setActiveProfile(profile); window.dispatchEvent(new Event('profile-changed')); }} />;
   }
 
   const isSubscribed = user.subscriptionStatus === "active" && user.subscriptionPlan !== "free";
@@ -531,7 +546,7 @@ export default function UserProfilePage() {
                   </button>
                   <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarFileChange} />
                 </div>
-                <h2 className="text-xl font-black tracking-tight">{user.name}</h2>
+                <h2 className="text-xl font-black tracking-tight">{user.name || "User"}</h2>
                 <p className="text-muted-foreground text-sm font-medium mt-0.5">{user.email || "Member"}</p>
                 
                 <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
@@ -613,7 +628,7 @@ export default function UserProfilePage() {
               {activeTab === "overview" && (
                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <div className="flex items-center justify-between border-b border-border/40 pb-4">
-                    <h2 className="text-xl font-black text-foreground">Welcome back, {user.name.split(" ")[0]}!</h2>
+                    <h2 className="text-xl font-black text-foreground">Welcome back, {user.name || "User"}!</h2>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
