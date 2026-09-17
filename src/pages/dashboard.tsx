@@ -139,12 +139,23 @@ export default function Dashboard() {
     tooltipLabel: isDark ? "#e4e4e7" : "#18181b",
   };
 
+  const storageSub = (() => {
+    const bd = stats?.storageBreakdown;
+    if (!bd) return "Media files stored";
+    const parts: string[] = [];
+    if (bd.digitalocean?.bytes > 0) parts.push(`DO: ${bd.digitalocean.formatted}`);
+    if (bd.s3?.bytes > 0) parts.push(`S3: ${bd.s3.formatted}`);
+    if (bd.bunny?.bytes > 0) parts.push(`Bunny: ${bd.bunny.formatted}`);
+    if (bd.local?.bytes > 0) parts.push(`Local: ${bd.local.formatted}`);
+    return parts.length > 0 ? parts.join(" · ") : "No files uploaded yet";
+  })();
+
   const statCards = [
     { title: "Total Users", value: stats?.totalUsers?.toLocaleString() ?? "0", icon: Users, sub: "All registered accounts", highlight: false },
     { title: "Active Subscribers", value: stats?.totalSubscribers?.toLocaleString() ?? "0", icon: Users, sub: "Currently active plans", highlight: false },
     { title: "Expiring Soon", value: stats?.soonToExpire?.toLocaleString() ?? "0", icon: Clock, sub: "Within next 7 days", highlight: false },
     { title: "Total Reviews", value: stats?.totalReviews?.toLocaleString() ?? "0", icon: Star, sub: "Published reviews", highlight: false },
-    { title: "Total Storage Usage", value: stats?.totalStorageUsage ?? "0 MB", icon: HardDrive, sub: "Media files stored", highlight: false },
+    { title: "Total Storage Usage", value: stats?.totalStorageUsage ?? "0 B", icon: HardDrive, sub: storageSub, highlight: false },
     { title: "Content Library", value: stats?.restContent?.toLocaleString() ?? "0", icon: Film, sub: "Movies + TV shows", highlight: false },
     { title: "Subscription Revenue", value: formatStatRevenue(stats?.subscriptionRevenue), icon: DollarSign, sub: "Active plans revenue", highlight: false },
     { title: "Coin Purchase Revenue", value: formatStatRevenue(stats?.coinRevenue), icon: Coins, sub: `${stats?.totalCoinTransactions ?? 0} coin transactions`, highlight: true },
