@@ -1,6 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-let baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+let baseUrl = import.meta.env.VITE_API_URL;
+if (!baseUrl) {
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    baseUrl = window.location.origin;
+  } else {
+    baseUrl = "http://localhost:3000";
+  }
+}
 let getAuthToken = () => localStorage.getItem("appAccessToken");
 
 export const getActiveProfileId = (): string | null => {
