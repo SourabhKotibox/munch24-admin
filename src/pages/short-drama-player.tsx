@@ -317,7 +317,13 @@ export default function ShortDramaPlayer() {
       {/* Back / close button — top left */}
       {!isExpanded && (
         <button
-          onClick={() => setLocation("/")}
+          onClick={() => {
+            if (window.history.length > 1) {
+              window.history.back();
+            } else {
+              setLocation("/browse/drama");
+            }
+          }}
           className="absolute top-4 left-4 z-50 w-10 h-10 flex items-center justify-center rounded-full bg-black/60 border border-white/10 text-white hover:bg-white/10 transition-all"
         >
           <X className="w-5 h-5" />
@@ -654,7 +660,7 @@ export default function ShortDramaPlayer() {
                 </button>
                 {isExpanded && (
                   <button
-                    onClick={() => setLocation("/")}
+                    onClick={() => setLocation("/browse/drama")}
                     className="text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
                   >
                     <X className="w-4 h-4" />
@@ -753,8 +759,8 @@ export default function ShortDramaPlayer() {
                     onClick={() => { goToEpisode(n); setShowEpList(false); }}
                     className={`w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all ${isCurrent ? "bg-red-600/20 border border-red-600/30" : "hover:bg-white/5"}`}
                   >
-                    <div className="w-12 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-800" style={{ aspectRatio: "9/16" }}>
-                      {ep.thumbnail && <img src={getImageUrl(ep.thumbnail)} alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
+                    <div className="w-12 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-800 flex items-center justify-center" style={{ aspectRatio: "9/16" }}>
+                      {ep.thumbnail && <img src={getImageUrl(ep.thumbnail)} alt="" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 mb-0.5">
@@ -816,12 +822,12 @@ export default function ShortDramaPlayer() {
                       : "bg-zinc-900/20 border-zinc-900/60 hover:bg-zinc-900/40 hover:border-zinc-800"
                   }`}
                 >
-                  <div className="w-12 aspect-[9/16] rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 relative">
+                  <div className="w-12 aspect-[9/16] rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 relative flex items-center justify-center">
                     {ep.thumbnail && (
                       <img
                         src={getImageUrl(ep.thumbnail)}
                         alt=""
-                        className="w-full h-full object-cover group-hover/ep:scale-105 transition-transform duration-350"
+                        className="w-full h-full object-contain group-hover/ep:scale-105 transition-transform duration-350"
                       />
                     )}
                     <div className="absolute inset-0 bg-black/40 group-hover/ep:bg-black/20 transition-all flex items-center justify-center">

@@ -642,11 +642,11 @@ export default function MediaLibraryPage() {
                     <tr key={file._id} className={`border-b border-border last:border-0 hover:bg-muted/50 transition-colors ${idx % 2 === 0 ? "" : "bg-muted/20"}`}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted shrink-0">
+                          <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted shrink-0 flex items-center justify-center">
                             {file.fileType?.startsWith("video") ? (
-                              <video src={`${getImageUrl(file.url || file.filePath)}#t=0.5`} preload="metadata" className="w-full h-full object-cover" />
+                              <video src={`${getImageUrl(file.url || file.filePath)}#t=0.5`} preload="metadata" className="w-full h-full object-contain" />
                             ) : (
-                              <img src={getImageUrl(file.url || file.filePath)} alt={file.name} className="w-full h-full object-cover" loading="lazy" />
+                              <img src={getImageUrl(file.url || file.filePath)} alt={file.name} className="w-full h-full object-contain" loading="lazy" />
                             )}
                           </div>
                           <div className="flex flex-col">

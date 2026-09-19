@@ -217,7 +217,7 @@ export default function CategoryShowDetail() {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center gap-4 mb-8">
-        <Button variant="ghost" onClick={() => window.history.back()}>
+        <Button variant="ghost" onClick={() => setLocation("/categories")}>
           <ChevronLeft className="w-5 h-5 mr-2" />
           Back
         </Button>

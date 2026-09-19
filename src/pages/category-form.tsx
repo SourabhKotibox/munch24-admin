@@ -180,7 +180,7 @@ export default function CategoryForm() {
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <span>Dashboard</span>
+        <button onClick={() => setLocation("/dashboard")} className="text-muted-foreground hover:text-foreground transition-colors">Dashboard</button>
         <span>/</span>
         <button
           onClick={() => setLocation("/categories")}
@@ -266,7 +266,7 @@ export default function CategoryForm() {
                 className="w-full h-32 border-2 border-dashed"
               >
                 {thumbnailPreview ? (
-                  <img src={thumbnailPreview} alt="Thumbnail" className="w-full h-full object-cover" />
+                  <img src={thumbnailPreview} alt="Thumbnail" className="w-full h-full object-contain" />
                 ) : (
                   <div className="flex flex-col items-center gap-2">
                     <ImageIcon className="w-5 h-5" />
@@ -285,7 +285,7 @@ export default function CategoryForm() {
                 className="w-full h-32 border-2 border-dashed"
               >
                 {bannerPreview ? (
-                  <img src={bannerPreview} alt="Banner" className="w-full h-full object-cover" />
+                  <img src={bannerPreview} alt="Banner" className="w-full h-full object-contain" />
                 ) : (
                   <div className="flex flex-col items-center gap-2">
                     <ImageIcon className="w-5 h-5" />

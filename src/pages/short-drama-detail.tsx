@@ -421,7 +421,7 @@ export default function ShortDramaDetail() {
                               <div className="flex items-center gap-3">
                                 <div className="h-10 w-14 rounded overflow-hidden border border-border bg-muted shrink-0 flex items-center justify-center">
                                   {ep.thumbnail ? (
-                                    <img src={getImageUrl(ep.thumbnail)} alt="" className="h-full w-full object-cover" />
+                                    <img src={getImageUrl(ep.thumbnail)} alt="" className="h-full w-full object-contain" />
                                   ) : (
                                     <Film className="h-4 w-4 text-muted-foreground" />
                                   )}

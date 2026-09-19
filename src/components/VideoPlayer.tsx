@@ -414,7 +414,9 @@ export default function VideoPlayer({
             <div className="bg-zinc-900/90 backdrop-blur-md border border-zinc-700 rounded-2xl p-4 max-w-xs w-full shadow-2xl">
               <p className="text-foreground/70 text-[10px] uppercase tracking-widest font-bold mb-2">Next Up</p>
               {nextEpisodePoster && (
-                <img src={nextEpisodePoster} alt="" className="w-full rounded-lg mb-3 object-cover" style={{ aspectRatio: '16/9' }} />
+                <div className="w-full rounded-lg mb-3 overflow-hidden bg-black flex items-center justify-center" style={{ aspectRatio: '16/9' }}>
+                  <img src={nextEpisodePoster} alt="" className="w-full h-full object-contain" />
+                </div>
               )}
               <p className="text-foreground font-bold text-sm truncate">{nextEpisodeTitle || 'Next Episode'}</p>
               <div className="flex items-center gap-2 mt-3">

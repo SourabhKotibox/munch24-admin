@@ -330,7 +330,7 @@ export default function BannerForm() {
                 <img
                   src={getImageUrl(bannerData.content.thumbnail || bannerData.thumbnail || bannerData.imageUrl || "")}
                   alt={bannerData.title}
-                  className="w-20 h-28 object-cover rounded-lg border border-border flex-shrink-0"
+                  className="w-20 h-28 object-contain bg-muted rounded-lg border border-border flex-shrink-0"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                 />
                 <div className="flex-1 min-w-0">
@@ -500,12 +500,12 @@ export default function BannerForm() {
                       className={`group relative text-left rounded-xl border overflow-hidden transition-all duration-150 hover:border-primary/60 hover:shadow-md ${isSelected ? "ring-2 ring-primary border-primary" : "border-border"}`}
                     >
                       {/* Thumbnail */}
-                      <div className="relative aspect-[2/3] bg-muted overflow-hidden">
+                      <div className="relative aspect-[2/3] bg-muted overflow-hidden flex items-center justify-center">
                         {item.thumbnail ? (
                           <img
                             src={getImageUrl(item.thumbnail)}
                             alt={item.title}
-                            className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                            className="w-full h-full object-contain transition-transform duration-200 group-hover:scale-105"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
@@ -558,7 +558,7 @@ export default function BannerForm() {
                       <img
                         src={getImageUrl(selectedContent.thumbnail)}
                         alt={selectedContent.title}
-                        className="w-16 h-24 object-cover rounded-lg border border-border flex-shrink-0"
+                        className="w-16 h-24 object-contain bg-muted rounded-lg border border-border flex-shrink-0"
                       />
                     )}
                     <div className="flex-1 min-w-0">
@@ -725,7 +725,7 @@ function PublishingCard({
                   onChange={(e) => setThumbnailOverride(e.target.value)}
                 />
                 {thumbnailOverride && (
-                  <img src={getImageUrl(thumbnailOverride)} alt="Preview" className="h-40 w-28 rounded-lg object-cover border border-border" />
+                  <img src={getImageUrl(thumbnailOverride)} alt="Preview" className="h-40 w-28 rounded-lg object-contain bg-muted border border-border" />
                 )}
               </TabsContent>
               <TabsContent value="upload" className="mt-4 space-y-3">
@@ -734,7 +734,7 @@ function PublishingCard({
                 </Button>
                 {thumbnailOverride && (
                   <div className="flex items-center gap-3">
-                    <img src={getImageUrl(thumbnailOverride)} alt="Preview" className="h-40 w-28 rounded-lg object-cover border border-border" />
+                    <img src={getImageUrl(thumbnailOverride)} alt="Preview" className="h-40 w-28 rounded-lg object-contain bg-muted border border-border" />
                     <Button variant="ghost" size="icon" type="button" onClick={() => setThumbnailOverride("")}>
                       <X className="h-4 w-4" />
                     </Button>

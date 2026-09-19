@@ -190,13 +190,13 @@ function ShortDramaCard({ drama, onClick, fullWidth, homeStyle = false, compactS
       onClick={onClick}
     >
       <div
-         className={`relative bg-zinc-900 transition-all duration-300 ${compactStyle ? "rounded-[6px] overflow-hidden group-hover:ring-1 group-hover:ring-purple-500/60 shadow-lg" : homeStyle ? `${HOME_CARD_CONTAINER_CLASS} shadow-lg shadow-black/30 group-hover:shadow-xl group-hover:shadow-black/50 group-hover:ring-1 group-hover:ring-purple-500/60` : "rounded-xl overflow-hidden group-hover:ring-2 group-hover:ring-purple-500/60 shadow-lg"}`}
+         className={`relative bg-zinc-900 flex items-center justify-center transition-all duration-300 ${compactStyle ? "rounded-[6px] overflow-hidden group-hover:ring-1 group-hover:ring-purple-500/60 shadow-lg" : homeStyle ? `${HOME_CARD_CONTAINER_CLASS} shadow-lg shadow-black/30 group-hover:shadow-xl group-hover:shadow-black/50 group-hover:ring-1 group-hover:ring-purple-500/60` : "rounded-xl overflow-hidden group-hover:ring-2 group-hover:ring-purple-500/60 shadow-lg"}`}
         style={{ aspectRatio: "9/16" }}
       >
         <img
           src={drama.poster ? getImageUrl(drama.poster) : drama.backdrop || ""}
           alt={drama.title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
@@ -664,11 +664,11 @@ function NewHotTab({ onPlay }: { onPlay: (item: ContentItem) => void }) {
 
               {/* CardMedia */}
               <div className="relative px-4 mb-4">
-                <div className="relative aspect-[16/9] rounded-xl overflow-hidden bg-zinc-900 group-hover:scale-[1.02] transition-transform duration-500">
+                <div className="relative aspect-[16/9] rounded-xl overflow-hidden bg-zinc-900 flex items-center justify-center group-hover:scale-[1.02] transition-transform duration-500">
                   <img
                     src={getImageUrl(item.backdrop || item.poster)}
                     alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                   <button
@@ -853,11 +853,11 @@ function HomeTab({ onPlay, onSelectDrama, onSubscribeClick, isSubscribed }: {
                 onClick={() => onPlay(item)}
               >
                 {/* Card */}
-                 <div className={`relative bg-zinc-900 shadow-lg shadow-black/30 group-hover:shadow-xl transition-shadow ${HOME_CARD_CONTAINER_CLASS}`} style={{ aspectRatio: "16/9" }}>
+                 <div className={`relative bg-zinc-900 flex items-center justify-center shadow-lg shadow-black/30 group-hover:shadow-xl transition-shadow ${HOME_CARD_CONTAINER_CLASS}`} style={{ aspectRatio: "16/9" }}>
                   <img
                     src={getImageUrl(item.backdrop || item.poster || item.posterImage || item.thumbnail) || ""}
                     alt={item.title || ""}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                     onError={(e) => { (e.target as HTMLImageElement).style.backgroundColor = "#111"; }}
                   />
                   {/* Gradient overlay */}

@@ -367,7 +367,7 @@ export default function ShowForm() {
                       <img
                         src={getImageUrl(formData.thumbnail)}
                         alt="Thumbnail preview"
-                        className="h-40 w-28 rounded-md object-cover border border-border"
+                        className="h-40 w-28 rounded-md object-contain bg-muted/20 border border-border"
                       />
                       <button
                         type="button"
@@ -412,7 +412,7 @@ export default function ShowForm() {
                       <img
                         src={getImageUrl(formData.bannerImage)}
                         alt="Banner preview"
-                        className="h-28 w-64 rounded-md object-cover border border-border"
+                        className="h-28 w-64 rounded-md object-contain bg-muted/20 border border-border"
                       />
                       <button
                         type="button"

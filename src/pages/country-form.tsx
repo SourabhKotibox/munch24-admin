@@ -58,7 +58,7 @@ export default function CountryFormPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <span className="text-foreground/65">Dashboard</span>
+        <button onClick={() => setLocation("/dashboard")} className="text-foreground/65 hover:text-foreground transition-colors">Dashboard</button>
         <span>/</span>
         <button onClick={() => setLocation("/countries")} className="text-foreground/65 hover:text-foreground transition-colors">
           Countries

@@ -128,7 +128,13 @@ export default function TVShowDetailPage() {
 
         {/* Back button */}
         <button
-          onClick={() => setLocation("/")}
+          onClick={() => {
+            if (window.history.length > 1) {
+              window.history.back();
+            } else {
+              setLocation(isDrama ? "/browse/drama" : "/tv-shows-browse");
+            }
+          }}
           className="absolute top-20 left-6 sm:left-10 flex items-center gap-2 text-foreground/80 hover:text-foreground text-sm font-semibold transition-colors z-10"
         >
           <ChevronLeft className="w-4 h-4" /> Back
@@ -240,9 +246,9 @@ export default function TVShowDetailPage() {
                     }}
                     className="group flex gap-4 p-3 rounded-xl bg-zinc-900/40 border border-zinc-800/60 hover:border-zinc-700 hover:bg-zinc-900/70 transition-all cursor-pointer"
                   >
-                    <div className="relative w-28 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-800" style={{ aspectRatio: "16/9" }}>
+                    <div className="relative w-28 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-800 flex items-center justify-center" style={{ aspectRatio: "16/9" }}>
                       {epThumb ? (
-                        <img src={epThumb} alt={ep.title} className="w-full h-full object-cover" />
+                        <img src={epThumb} alt={ep.title} className="w-full h-full object-contain" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <Film className="w-5 h-5 text-foreground/80" />

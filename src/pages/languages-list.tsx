@@ -253,7 +253,7 @@ export default function LanguagesList() {
                     <img
                       src={getImageUrl(formData.image)}
                       alt="Preview"
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-contain"
                     />
                     <button
                       type="button"

@@ -71,7 +71,9 @@ export default function FaqFormPage() {
     <div className="space-y-6">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <span className="text-foreground/65">Dashboard</span>
+        <button onClick={() => setLocation("/dashboard")} className="text-foreground/65 hover:text-foreground transition-colors">Dashboard</button>
+        <span>/</span>
+        <button onClick={() => setLocation("/faq")} className="text-foreground/65 hover:text-foreground transition-colors">FAQ</button>
         <span>/</span>
         <span className="text-foreground font-medium">{isEdit ? "Edit FAQ" : "Add FAQ"}</span>
       </div>

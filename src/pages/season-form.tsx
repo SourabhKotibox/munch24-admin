@@ -142,7 +142,7 @@ export default function SeasonForm() {
           <Label className="text-foreground text-sm font-medium">Season Poster</Label>
           {posterUrl ? (
             <div className="group relative inline-block">
-              <img src={posterUrl} alt="Poster" className="h-40 w-28 rounded-lg object-cover border border-border" />
+              <img src={posterUrl} alt="Poster" className="h-40 w-28 rounded-lg object-contain bg-muted border border-border" />
             </div>
           ) : null}
           <div>

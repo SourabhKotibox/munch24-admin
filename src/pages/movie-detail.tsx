@@ -117,11 +117,12 @@ export default function MovieDetailPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-[#0c0c14]/90 via-[#0c0c14]/30 to-transparent" />
 
         {/* Back button */}
-        <div className="absolute top-0 left-0 right-0 z-10" style={{ paddingTop: "72px" }}>
+        <div className="absolute top-0 left-0 right-0 z-20" style={{ paddingTop: "72px" }}>
           <div className="px-6 sm:px-10 lg:px-16">
             <button
-              onClick={() => window.history.back()}
-              className="flex items-center gap-1.5 text-foreground/80 hover:text-foreground text-sm font-semibold transition-colors"
+              type="button"
+              onClick={() => setLocation("/browse/movies")}
+              className="flex items-center gap-1.5 text-foreground/80 hover:text-foreground text-sm font-semibold transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" /> Back
             </button>
@@ -133,8 +134,8 @@ export default function MovieDetailPage() {
           <div className="flex items-end gap-8 w-full">
             {/* Poster */}
             {posterImg && (
-              <div className="hidden sm:block flex-shrink-0 w-36 lg:w-48 rounded-2xl overflow-hidden shadow-2xl border border-white/10" style={{ aspectRatio: "2/3" }}>
-                <img src={posterImg} alt={item.title} className="w-full h-full object-cover" />
+              <div className="hidden sm:flex flex-shrink-0 w-36 lg:w-48 rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-zinc-900 items-center justify-center" style={{ aspectRatio: "2/3" }}>
+                <img src={posterImg} alt={item.title} className="w-full h-full object-contain" />
               </div>
             )}
             {/* Text */}
@@ -443,12 +444,12 @@ export default function MovieDetailPage() {
                       }}
                     >
                       {/* Thumbnail */}
-                      <div className="relative flex-shrink-0 w-36 sm:w-44 rounded-xl overflow-hidden" style={{ aspectRatio: '16/9' }}>
+                      <div className="relative flex-shrink-0 w-36 sm:w-44 rounded-xl overflow-hidden bg-zinc-900 flex items-center justify-center" style={{ aspectRatio: '16/9' }}>
                         {ep.thumbnail ? (
                           <img
                             src={getImageUrl(ep.thumbnail)}
                             alt={ep.title}
-                            className="w-full h-full object-cover bg-zinc-900 transition-transform duration-500 group-hover:scale-105"
+                            className="w-full h-full object-contain bg-zinc-900 transition-transform duration-500 group-hover:scale-105"
                             onError={(e) => { (e.target as HTMLImageElement).src = ''; }}
                           />
                         ) : (

@@ -100,7 +100,9 @@ export default function ActorFormPage() {
     <div className="space-y-6">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <span className="text-foreground/65">Dashboard</span>
+        <button onClick={() => setLocation("/dashboard")} className="text-foreground/65 hover:text-foreground transition-colors">Dashboard</button>
+        <span>/</span>
+        <button onClick={() => setLocation("/actors")} className="text-foreground/65 hover:text-foreground transition-colors">Actors</button>
         <span>/</span>
         <span className="text-foreground font-medium">{isEdit ? "Edit Actor" : "New Actor"}</span>
       </div>

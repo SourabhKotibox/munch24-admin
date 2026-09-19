@@ -218,7 +218,7 @@ export default function TvShowsPage() {
                       <div className="flex items-center gap-3">
                         <div className="h-16 w-11 rounded-lg overflow-hidden border border-border bg-muted shrink-0 flex items-center justify-center">
                           {show.thumbnail ? (
-                            <img src={getImageUrl(show.thumbnail)} alt={show.title} className="h-full w-full object-cover" />
+                            <img src={getImageUrl(show.thumbnail)} alt={show.title} className="h-full w-full object-contain" />
                           ) : (
                             <ImageIcon className="h-5 w-5 text-muted-foreground/80" />
                           )}

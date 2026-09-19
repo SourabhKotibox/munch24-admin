@@ -408,6 +408,10 @@ export default function EpisodeForm() {
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <button onClick={() => setLocation("/dashboard")} className="hover:text-foreground transition-colors">Dashboard</button>
         <span>/</span>
+        <button onClick={() => setLocation(episodeListUrl)} className="hover:text-foreground transition-colors">
+          {isShortDrama ? "Short Drama Episodes" : "Episodes"}
+        </button>
+        <span>/</span>
         <span className="text-foreground font-medium">{isEdit ? "Edit Episode" : "New Episode"}</span>
       </div>
 

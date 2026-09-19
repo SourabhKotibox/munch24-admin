@@ -218,7 +218,7 @@ export default function CategoryShowForm() {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center gap-4 mb-8">
-        <Button variant="ghost" onClick={() => setLocation(`/categories/${categoryId}/shows`)}>
+        <Button variant="ghost" onClick={() => setLocation("/categories")}>
           <ChevronLeft className="w-5 h-5 mr-2" />
           Back
         </Button>
@@ -437,7 +437,7 @@ export default function CategoryShowForm() {
                     <img
                       src={getImageUrl(formData.thumbnail)}
                       alt="Thumbnail preview"
-                      className="h-40 w-28 rounded-md object-cover border border-border"
+                      className="h-40 w-28 rounded-md object-contain bg-muted border border-border"
                     />
                   )}
                 </TabsContent>
@@ -452,7 +452,7 @@ export default function CategoryShowForm() {
                       <img
                         src={URL.createObjectURL(thumbnailFile)}
                         alt="Thumbnail preview"
-                        className="h-40 w-28 rounded-md object-cover border border-border"
+                        className="h-40 w-28 rounded-md object-contain bg-muted border border-border"
                       />
                       <Button variant="ghost" size="icon" type="button" onClick={() => setThumbnailFile(null)}>
                         <X className="h-4 w-4" />

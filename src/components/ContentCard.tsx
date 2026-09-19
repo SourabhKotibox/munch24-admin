@@ -109,14 +109,14 @@ export function PortraitCard({
     >
       {/* Image container */}
       <div
-                 className={`relative bg-zinc-900 transition-all duration-300 ${compactStyle ? "rounded-[6px] overflow-hidden group-hover:ring-1 group-hover:ring-red-500/40" : homeStyle ? `${HOME_CARD_CONTAINER_CLASS} shadow-lg shadow-black/30 group-hover:shadow-xl group-hover:shadow-black/50 group-hover:border-red-500/50` : "rounded-xl overflow-hidden group-hover:ring-2 group-hover:ring-red-500/40"}`}
+        className={`relative bg-zinc-900 flex items-center justify-center transition-all duration-300 ${compactStyle ? "rounded-[6px] overflow-hidden group-hover:ring-1 group-hover:ring-red-500/40" : homeStyle ? `${HOME_CARD_CONTAINER_CLASS} shadow-lg shadow-black/30 group-hover:shadow-xl group-hover:shadow-black/50 group-hover:border-red-500/50` : "rounded-xl overflow-hidden group-hover:ring-2 group-hover:ring-red-500/40"}`}
         style={{ aspectRatio: "2/3" }}
       >
         {/* Poster image */}
         <img
           src={imgSrc}
           alt={item.title || ""}
-          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+          className="w-full h-full object-contain group-hover:scale-[1.03] transition-transform duration-500"
           onError={(e) => {
             const el = e.target as HTMLImageElement;
             el.style.backgroundColor = "#111";
@@ -212,14 +212,14 @@ export function LandscapeCard({
       onClick={onClick}
     >
       <div
-                 className={`relative bg-zinc-900 transition-all duration-300 ${homeStyle ? `${HOME_CARD_CONTAINER_CLASS} shadow-lg shadow-black/30 group-hover:shadow-xl group-hover:shadow-black/50 group-hover:border-red-500/50` : "rounded-xl overflow-hidden group-hover:ring-1 group-hover:ring-red-500/40"}`}
+        className={`relative bg-zinc-900 flex items-center justify-center transition-all duration-300 ${homeStyle ? `${HOME_CARD_CONTAINER_CLASS} shadow-lg shadow-black/30 group-hover:shadow-xl group-hover:shadow-black/50 group-hover:border-red-500/50` : "rounded-xl overflow-hidden group-hover:ring-1 group-hover:ring-red-500/40"}`}
         style={{ aspectRatio: "16/9" }}
       >
         {/* Backdrop image */}
         <img
           src={imgSrc}
           alt={item.title || ""}
-          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+          className="w-full h-full object-contain group-hover:scale-[1.03] transition-transform duration-500"
           onError={(e) => {
             const el = e.target as HTMLImageElement;
             el.style.backgroundColor = "#111";

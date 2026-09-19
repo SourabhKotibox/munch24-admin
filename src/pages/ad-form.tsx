@@ -154,7 +154,7 @@ export default function AdForm() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-          <span>Dashboard</span><span>/</span>
+          <button onClick={() => setLocation("/dashboard")} className="hover:text-foreground transition-colors">Dashboard</button><span>/</span>
           <button onClick={() => setLocation("/ads")} className="hover:text-foreground transition-colors">Custom Ads</button>
           <span>/</span>
           <span className="text-foreground">{isEdit ? "Edit Ad" : "New Ad"}</span>

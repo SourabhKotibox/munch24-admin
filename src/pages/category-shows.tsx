@@ -142,7 +142,7 @@ export default function CategoryShowsPage() {
                               <img
                                 src={getImageUrl(show.thumbnail)}
                                 alt={show.title}
-                                className="h-full w-full object-cover"
+                                className="h-full w-full object-contain"
                               />
                             ) : null}
                           </div>

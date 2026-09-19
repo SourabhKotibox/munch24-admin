@@ -494,9 +494,18 @@ export default function UserProfilePage() {
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-2xl border-b border-border/40">
         <div className="w-full mx-auto px-4 sm:px-8 lg:px-12 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center justify-center w-8 h-8 rounded-full bg-muted hover:bg-muted/80 transition-colors group">
+            <button
+              onClick={() => {
+                if (window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  setLocation("/");
+                }
+              }}
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-muted hover:bg-muted/80 transition-colors group"
+            >
               <ArrowLeft className="w-4 h-4 text-foreground group-hover:-translate-x-0.5 transition-transform" />
-            </Link>
+            </button>
             <div className="flex items-center gap-2">
               {getLogoUrl() ? (
                 <img
@@ -661,8 +670,8 @@ export default function UserProfilePage() {
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {continueWatching.slice(0, 6).map((item: any) => (
                           <div key={item.id || item._id} onClick={() => handlePlayItem(item)} className="group cursor-pointer">
-                            <div className="relative rounded-xl overflow-hidden bg-muted mb-2 aspect-video">
-                              <img src={getImageUrl(item.thumbnail || item.poster || "")} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                            <div className="relative rounded-xl overflow-hidden bg-muted mb-2 aspect-video flex items-center justify-center">
+                              <img src={getImageUrl(item.thumbnail || item.poster || "")} alt={item.title} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
                               <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/50">
                                 <div className="h-full bg-primary" style={{ width: `${Math.round(item.progressPercent || item.progress || 25)}%` }} />
                               </div>
@@ -699,8 +708,8 @@ export default function UserProfilePage() {
                   ) : (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {wishlistItems.map((item: any) => (
-                        <div key={item.id} onClick={() => handlePlayItem(item)} className="group relative rounded-xl overflow-hidden aspect-[2/3] cursor-pointer">
-                          <img src={getImageUrl(item.poster || item.backdrop || "")} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        <div key={item.id} onClick={() => handlePlayItem(item)} className="group relative rounded-xl overflow-hidden aspect-[2/3] cursor-pointer bg-zinc-900 flex items-center justify-center">
+                          <img src={getImageUrl(item.poster || item.backdrop || "")} alt={item.title} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                           <div className="absolute bottom-0 left-0 right-0 p-3">
                             <p className="text-white font-bold text-xs line-clamp-2">{item.title}</p>
@@ -732,8 +741,8 @@ export default function UserProfilePage() {
                   ) : (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {downloadItems.map((item: any) => (
-                        <div key={item.id} onClick={() => handlePlayDownload(item)} className="group relative rounded-xl overflow-hidden aspect-[2/3] cursor-pointer">
-                          <img src={getImageUrl(item.poster || item.thumbnail || "")} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        <div key={item.id} onClick={() => handlePlayDownload(item)} className="group relative rounded-xl overflow-hidden aspect-[2/3] cursor-pointer bg-zinc-900 flex items-center justify-center">
+                          <img src={getImageUrl(item.poster || item.thumbnail || "")} alt={item.title} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
                           {offlineCached[item.id] && (
                             <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-600/90 text-[9px] font-bold text-white z-20">
                               <Wifi className="w-2.5 h-2.5" /> Offline

@@ -105,7 +105,13 @@ export default function PublicPagePage() {
               Check back later or explore other content.
             </p>
             <button
-              onClick={() => setLocation("/")}
+              onClick={() => {
+                if (window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  setLocation("/");
+                }
+              }}
               className="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl text-sm transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-lg shadow-primary/30"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -172,7 +178,13 @@ export default function PublicPagePage() {
             {/* Back button at bottom */}
             <div className="mt-16 pt-8 border-t border-zinc-900 flex items-center justify-between">
               <button
-                onClick={() => setLocation("/")}
+                onClick={() => {
+                  if (window.history.length > 1) {
+                    window.history.back();
+                  } else {
+                    setLocation("/");
+                  }
+                }}
                 className="inline-flex items-center gap-2 text-white/75 hover:text-white text-xs font-bold transition-colors"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />

@@ -234,7 +234,7 @@ export default function NewHotManagement() {
                         <img
                           src={getImageUrl(poster)}
                           alt={title}
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-contain"
                           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                         />
                       ) : (

@@ -1355,7 +1355,19 @@ export default function EpisodeDetailPage() {
           {/* Back button row */}
           <div className="pt-4 pb-4">
             <button
-              onClick={() => window.history.back()}
+              onClick={() => {
+                if (window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  const targetId = contentId || showData?._id;
+                  const isMovie = showData?.contentType === "movie" || showData?.type === "movie";
+                  if (isMovie) {
+                    navigate(targetId ? `/movie/${targetId}` : "/browse/movies");
+                  } else {
+                    navigate(targetId ? `/show/${targetId}` : "/tv-shows-browse");
+                  }
+                }
+              }}
               className="flex items-center gap-1.5 text-foreground/80 hover:text-foreground text-sm font-semibold transition-colors"
             >
               <ChevronLeft className="w-4 h-4" /> Back
@@ -1396,7 +1408,7 @@ export default function EpisodeDetailPage() {
                   <Home className="w-3.5 h-3.5" /> Home
                 </button>
                 <ChevronRight className="w-3 h-3 flex-shrink-0" />
-                <button onClick={() => window.history.back()} className="hover:text-foreground transition-colors truncate max-w-[180px]">
+                <button onClick={() => navigate(`/show/${contentId}`)} className="hover:text-foreground transition-colors truncate max-w-[180px]">
                   {title}
                 </button>
                 <ChevronRight className="w-3 h-3 flex-shrink-0" />
@@ -1603,12 +1615,12 @@ export default function EpisodeDetailPage() {
                           {/* Left: Thumbnail */}
                           <div
                             onClick={() => isLocked ? handleLocked(ep.globalIndex) : goToEpisode(ep.globalIndex)}
-                            className="relative w-28 sm:w-36 aspect-video rounded-lg overflow-hidden bg-zinc-950 flex-shrink-0 cursor-pointer"
+                            className="relative w-28 sm:w-36 aspect-video rounded-lg overflow-hidden bg-zinc-950 flex-shrink-0 cursor-pointer flex items-center justify-center"
                           >
                             <img
                               src={getImageUrl(ep.thumbnail || showData?.thumbnail || "")}
                               alt={ep.title}
-                              className="w-full h-full object-cover group-hover/ep:scale-105 transition-transform duration-300"
+                              className="w-full h-full object-contain group-hover/ep:scale-105 transition-transform duration-300"
                             />
                             <div className="absolute inset-0 bg-black/45 group-hover/ep:bg-black/30 transition-all flex items-center justify-center">
                               {isLocked ? (

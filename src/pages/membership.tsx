@@ -200,9 +200,18 @@ export default function MembershipPage() {
       <header className="bg-background/80 backdrop-blur-2xl sticky top-0 z-50 border-b border-border/40">
         <div className="w-full mx-auto px-4 sm:px-8 lg:px-12 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/account" className="flex items-center justify-center w-8 h-8 rounded-full bg-muted hover:bg-muted/80 transition-colors group">
+            <button
+              onClick={() => {
+                if (window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  setLocation("/account");
+                }
+              }}
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-muted hover:bg-muted/80 transition-colors group"
+            >
               <ArrowLeft className="w-4 h-4 text-foreground group-hover:-translate-x-0.5 transition-transform" />
-            </Link>
+            </button>
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
                 <Crown className="w-4 h-4 text-amber-500" />

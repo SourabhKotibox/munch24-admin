@@ -311,7 +311,7 @@ export default function PromotionForm() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <span className="text-foreground/65">Dashboard</span>
+        <button onClick={() => setLocation("/dashboard")} className="text-foreground/65 hover:text-foreground transition-colors">Dashboard</button>
         <span>/</span>
         <button
           onClick={() => setLocation("/promotions")}
@@ -392,7 +392,7 @@ export default function PromotionForm() {
                   <img
                     src={getImageUrl(formData.thumbnailUrl)}
                     alt="Thumbnail Preview"
-                    className="max-h-40 rounded object-cover"
+                    className="max-h-40 rounded object-contain bg-muted"
                   />
                 </div>
               )}
@@ -412,7 +412,7 @@ export default function PromotionForm() {
                   <img
                     src={URL.createObjectURL(thumbnailFile)}
                     alt="Thumbnail Preview"
-                    className="max-h-40 rounded object-cover"
+                    className="max-h-40 rounded object-contain bg-muted"
                   />
                   <Button
                     variant="ghost"
@@ -428,7 +428,7 @@ export default function PromotionForm() {
                   <img
                     src={getImageUrl(promotionData.thumbnailUrl)}
                     alt="Current Thumbnail"
-                    className="max-h-40 rounded object-cover"
+                    className="max-h-40 rounded object-contain bg-muted"
                   />
                 </div>
               )}

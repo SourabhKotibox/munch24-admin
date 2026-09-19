@@ -43,7 +43,13 @@ export default function HelpSupportPage() {
         {/* Header Section */}
         <div className="flex items-center gap-3 mb-6">
           <button
-            onClick={() => setLocation("/")}
+            onClick={() => {
+              if (window.history.length > 1) {
+                window.history.back();
+              } else {
+                setLocation("/");
+              }
+            }}
             className="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-muted-foreground hover:text-foreground transition-all"
           >
             <ArrowLeft className="w-4 h-4" />

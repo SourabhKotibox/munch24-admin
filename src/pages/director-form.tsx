@@ -100,7 +100,9 @@ export default function DirectorFormPage() {
     <div className="space-y-6">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <span className="text-foreground/65">Dashboard</span>
+        <button onClick={() => setLocation("/dashboard")} className="text-foreground/65 hover:text-foreground transition-colors">Dashboard</button>
+        <span>/</span>
+        <button onClick={() => setLocation("/directors")} className="text-foreground/65 hover:text-foreground transition-colors">Directors</button>
         <span>/</span>
         <span className="text-foreground font-medium">{isEdit ? "Edit Director" : "New Director"}</span>
       </div>

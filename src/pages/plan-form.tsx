@@ -206,7 +206,7 @@ export default function PlanFormPage() {
     <div className="space-y-5 pb-6">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <button onClick={() => setLocation("/plans")} className="hover:text-foreground transition-colors">
+        <button onClick={() => setLocation("/dashboard")} className="hover:text-foreground transition-colors">
           Dashboard
         </button>
         <span>/</span>

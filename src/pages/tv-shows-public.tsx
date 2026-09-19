@@ -157,7 +157,16 @@ export default function TvShowsPublicPage() {
             {/* Page title row */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <button onClick={() => setLocation("/")} className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-all">
+                <button
+                  onClick={() => {
+                    if (window.history.length > 1) {
+                      window.history.back();
+                    } else {
+                      setLocation("/");
+                    }
+                  }}
+                  className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-all"
+                >
                   <ArrowLeft className="w-4 h-4" />
                 </button>
                 <div>
@@ -345,8 +354,8 @@ export default function TvShowsPublicPage() {
                 <div className="flex gap-4 overflow-x-auto scrollbar-none pb-2">
                   {showCw.map((item: any) => (
                     <div key={item.id || item._id} className="flex-shrink-0 w-[160px] cursor-pointer group" onClick={() => handlePlay(item)}>
-                      <div className="relative rounded-xl overflow-hidden bg-zinc-900" style={{ aspectRatio: "2/3" }}>
-                        <img src={getImageUrl(item.thumbnail || item.poster || item.backdrop)} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      <div className="relative rounded-xl overflow-hidden bg-zinc-900 flex items-center justify-center" style={{ aspectRatio: "2/3" }}>
+                        <img src={getImageUrl(item.thumbnail || item.poster || item.backdrop)} alt={item.title} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                           onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=300&h=450&fit=crop"; }} />
                         <div className="absolute bottom-0 left-0 right-0 h-1 bg-zinc-800">
                           <div className="h-full bg-primary rounded-full" style={{ width: `${item.progressPercent || 30}%` }} />

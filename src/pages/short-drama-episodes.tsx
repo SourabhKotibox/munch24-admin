@@ -230,7 +230,7 @@ export default function ShortDramaEpisodesPage() {
                         <div className="flex items-center gap-3">
                           <div className="h-12 w-20 rounded-lg overflow-hidden border border-border bg-muted shrink-0 flex items-center justify-center">
                             {ep.thumbnail ? (
-                              <img src={getImageUrl(ep.thumbnail)} alt={ep.title} className="h-full w-full object-cover" />
+                              <img src={getImageUrl(ep.thumbnail)} alt={ep.title} className="h-full w-full object-contain" />
                             ) : (
                               <ImageIcon className="h-5 w-5 text-foreground/80" />
                             )}

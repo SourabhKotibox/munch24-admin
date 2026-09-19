@@ -57,7 +57,13 @@ export default function WishlistPage() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setLocation("/")}
+              onClick={() => {
+                if (window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  setLocation("/");
+                }
+              }}
               className="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-muted-foreground hover:text-foreground transition-all"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -104,14 +110,14 @@ export default function WishlistPage() {
                 <div key={item.id} className="relative group cursor-pointer">
                   {/* Card */}
                   <div
-                    className="relative rounded-xl overflow-hidden bg-zinc-900 group-hover:ring-2 group-hover:ring-primary/40 transition-all duration-300"
+                    className="relative rounded-xl overflow-hidden bg-zinc-900 group-hover:ring-2 group-hover:ring-primary/40 transition-all duration-300 flex items-center justify-center"
                     style={{ aspectRatio: "2/3" }}
                     onClick={() => handlePlay(item)}
                   >
                     <img
                       src={imgSrc}
                       alt={item.title || ""}
-                      className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                      className="w-full h-full object-contain group-hover:scale-[1.03] transition-transform duration-500"
                       onError={(e) => {
                         const el = e.target as HTMLImageElement;
                         el.style.display = "none";

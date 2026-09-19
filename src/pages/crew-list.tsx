@@ -159,7 +159,7 @@ export default function CrewListPage() {
                     <div className="flex items-center gap-3">
                       {crew.image ? (
                         <img src={getImageUrl(crew.image)} alt={crew.name}
-                          className="h-10 w-10 rounded-lg object-cover shrink-0 bg-muted" />
+                          className="h-10 w-10 rounded-lg object-contain shrink-0 bg-muted" />
                       ) : (
                         <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
                           <User className="h-5 w-5 text-foreground/65" />
