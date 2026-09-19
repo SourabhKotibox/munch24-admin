@@ -404,6 +404,8 @@ function AdminRoutes() {
               <Route path="/short-drama-episodes/new" component={EpisodeForm} />
               <Route path="/short-drama-episodes/:id/edit" component={EpisodeForm} />
               <Route path="/short-drama-episodes/:id" component={EpisodeForm} />
+              <Route path="/short-drama-episode/:id/edit" component={EpisodeForm} />
+              <Route path="/short-drama-episode/:id" component={EpisodeForm} />
               <Route path="/short-drama-episodes" component={ShortDramaEpisodesPage} />
               <Route path="/coin-packages" component={CoinPackagesPage} />
               <Route path="/rewards-management" component={RewardsManagementPage} />

@@ -309,19 +309,40 @@ export default function MovieForm() {
       );
     }
 
-     if (movie.hlsUrl) {
-       const isHttp = movie.hlsUrl.startsWith("http://") || movie.hlsUrl.startsWith("https://");
-       if (movie.hlsUrl.endsWith(".m3u8") && isHttp) {
-         setVideoUploadType("hls");
-         setVideoUrl(movie.hlsUrl);
-       } else if (isHttp) {
-         setVideoUploadType("url");
-         setVideoUrl(movie.hlsUrl);
-       } else {
-         setVideoUploadType("local");
-         setVideoFilePath(movie.hlsUrl);
-       }
-     }
+    if (movie.videoUploadType) {
+      setVideoUploadType(movie.videoUploadType);
+      if (movie.videoUploadType === "local") {
+        setVideoFilePath(movie.hlsUrl || movie.videoUrl || "");
+      } else {
+        setVideoUrl(movie.videoUrl || movie.hlsUrl || "");
+      }
+    } else if (movie.videoUrl) {
+      const isHttp = movie.videoUrl.startsWith("http://") || movie.videoUrl.startsWith("https://");
+      const isM3u8 = movie.videoUrl.split("?")[0].toLowerCase().endsWith(".m3u8");
+      if (isM3u8 && isHttp) {
+        setVideoUploadType("hls");
+        setVideoUrl(movie.videoUrl);
+      } else if (isHttp) {
+        setVideoUploadType("url");
+        setVideoUrl(movie.videoUrl);
+      } else {
+        setVideoUploadType("local");
+        setVideoFilePath(movie.videoUrl);
+      }
+    } else if (movie.hlsUrl) {
+      const isHttp = movie.hlsUrl.startsWith("http://") || movie.hlsUrl.startsWith("https://");
+      const isM3u8 = movie.hlsUrl.split("?")[0].toLowerCase().endsWith(".m3u8");
+      if (isM3u8 && isHttp) {
+        setVideoUploadType("hls");
+        setVideoUrl(movie.hlsUrl);
+      } else if (isHttp) {
+        setVideoUploadType("url");
+        setVideoUrl(movie.hlsUrl);
+      } else {
+        setVideoUploadType("local");
+        setVideoFilePath(movie.hlsUrl);
+      }
+    }
     if (Array.isArray(movie.videoQualities) && movie.videoQualities.length > 0) {
       setQualityEnabled(true);
       setQualityRows(
@@ -449,7 +470,8 @@ export default function MovieForm() {
         crew: crewItems
           .filter((c) => c.directorId)
           .map((c) => ({ director: c.directorId, role: c.role })),
-        hlsUrl: videoUploadType === "local" ? videoFilePath : videoUrl,
+        videoUrl: videoUploadType === "url" ? videoUrl : null,
+        hlsUrl: videoUploadType === "local" ? videoFilePath : (videoUploadType === "hls" ? videoUrl : null),
         videoQualities: qualityEnabled
           ? qualityRows
               .filter((q) => q.url || q.filePath)
@@ -1089,7 +1111,7 @@ export default function MovieForm() {
                 <p><span className="text-muted-foreground">Transcoding:</span> {processingData.data.processingStatus === "processing" ? "In progress" : processingData.data.processingStatus === "ready" ? "Complete" : processingData.data.processingStatus === "failed" ? "Failed" : processingData.data.processingStatus}</p>
                 <p><span className="text-muted-foreground">CDN:</span> {processingData.data.hlsUrl ? "Available" : "Waiting"}</p>
                 <p><span className="text-muted-foreground">Playback:</span> {processingData.data.isReady ? "Ready" : "Not ready"}</p>
-                {processingData.data.processingError && (
+                {processingData.data.processingStatus !== "ready" && processingData.data.processingError && (
                   <p className="text-destructive">{processingData.data.processingError}</p>
                 )}
               </div>
@@ -1104,6 +1126,7 @@ export default function MovieForm() {
                     </SelectTrigger>
                     <SelectContent className="bg-popover border-border text-foreground">
                       <SelectItem value="url">External URL</SelectItem>
+                      <SelectItem value="hls">HLS / M3U8 URL</SelectItem>
                       <SelectItem value="local">Local (Media Library)</SelectItem>
                     </SelectContent>
                   </Select>

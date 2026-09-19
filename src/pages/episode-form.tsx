@@ -108,17 +108,23 @@ export default function EpisodeForm() {
   const [selectedSubtitleLanguages, setSelectedSubtitleLanguages] = useState<string[]>([]);
   const [subtitleRows, setSubtitleRows] = useState<SubtitleRow[]>([]);
 
-  const isShortDramaRoute = location.includes("short-drama");
-
   // API
-  const { data: showsData, isLoading: loadingShows } = useGetContentList({ contentType: isShortDramaRoute ? "drama" : "series", limit: 200 });
-  const { data: seasonsData } = useGetSeasonList(showId ? { contentId: showId } : {});
   const { data: existingEpisode, isLoading: loadingEpisode } = useGetEpisodeById(isEdit ? id : "");
   const { data: processingData } = useEpisodeProcessingStatus(isEdit ? id! : "", isEdit);
   const { data: languagesData } = useGetLanguagesList();
   const languagesList = (languagesData as any)?.data || [];
   const createMutation = useCreateEpisode();
   const updateMutation = useUpdateEpisode();
+
+  const isShortDramaRoute = location.includes("short-drama");
+  const existingEpisodeDoc: any = (existingEpisode as any)?.data || existingEpisode;
+  const isShortDrama = isShortDramaRoute || 
+    existingEpisodeDoc?.contentId?.contentType === "drama" ||
+    existingEpisodeDoc?.contentId?.type === "drama";
+  const episodeListUrl = isShortDrama ? "/short-drama-episodes" : "/episodes";
+
+  const { data: showsData, isLoading: loadingShows } = useGetContentList({ contentType: isShortDrama ? "drama" : "series", limit: 200 });
+  const { data: seasonsData } = useGetSeasonList(showId ? { contentId: showId } : {});
 
   const tvShows: any[] = showsData?.data || [];
   const availableSeasons: any[] = seasonsData?.data || [];
@@ -245,18 +251,18 @@ export default function EpisodeForm() {
         );
       }
 
-       if (e.hlsUrl) {
-         const isHttp = e.hlsUrl.startsWith("http://") || e.hlsUrl.startsWith("https://");
-         if (e.hlsUrl.endsWith(".m3u8") && isHttp) {
-           setVideoUploadType("hls");
-           setVideoUrl(e.hlsUrl);
-         } else {
-           setVideoUploadType("local");
-           setVideoFilePath(e.hlsUrl);
-         }
-       } else if (e.sourceVideoUrl) {
+      if (e.sourceVideoUrl) {
         setVideoUploadType("url");
         setVideoUrl(e.sourceVideoUrl);
+      } else if (e.hlsUrl) {
+        const isHttp = e.hlsUrl.startsWith("http://") || e.hlsUrl.startsWith("https://");
+        if (e.hlsUrl.endsWith(".m3u8") && isHttp) {
+          setVideoUploadType("hls");
+          setVideoUrl(e.hlsUrl);
+        } else {
+          setVideoUploadType("local");
+          setVideoFilePath(e.hlsUrl);
+        }
       }
 
       if (Array.isArray(e.videoQualities) && e.videoQualities.length > 0) {
@@ -286,7 +292,7 @@ export default function EpisodeForm() {
 
   const handleSave = async () => {
     if (!showId) {
-      toast({ title: "Please select a TV Show", variant: "destructive" });
+      toast({ title: isShortDrama ? "Please select a Short Drama" : "Please select a TV Show", variant: "destructive" });
       return;
     }
     if (!name.trim()) {
@@ -301,8 +307,8 @@ export default function EpisodeForm() {
       title: name,
       description: description || undefined,
       thumbnail: thumbnailUrl || undefined,
-      sourceVideoUrl: videoUploadType === "url" ? videoUrl : undefined,
-      hlsUrl: videoUploadType === "local" ? videoFilePath : (videoUploadType === "hls" ? videoUrl : undefined),
+      sourceVideoUrl: videoUploadType === "url" ? videoUrl : null,
+      hlsUrl: videoUploadType === "local" ? videoFilePath : (videoUploadType === "hls" ? videoUrl : null),
       trailerUrl: trailerUrl || undefined,
       isFree,
       isLocked: !isFree && isLocked,
@@ -335,7 +341,7 @@ export default function EpisodeForm() {
       queryClient.invalidateQueries({ queryKey: ["episode-list"] });
       queryClient.invalidateQueries({ queryKey: ["season-list"] });
       toast({ title: isEdit ? "Episode updated!" : "Episode created!" });
-      setLocation("/episodes");
+      setLocation(episodeListUrl);
     } catch (error: any) {
       toast({ title: "Save failed", description: error?.message, variant: "destructive" });
     }
@@ -405,7 +411,7 @@ export default function EpisodeForm() {
         <span className="text-foreground font-medium">{isEdit ? "Edit Episode" : "New Episode"}</span>
       </div>
 
-      <button onClick={() => setLocation("/episodes")}
+      <button onClick={() => setLocation(episodeListUrl)}
         className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">
         «&nbsp;Back
       </button>
@@ -451,11 +457,11 @@ export default function EpisodeForm() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div className="space-y-1.5">
                 <Label className="text-foreground text-sm font-medium">
-                  TV Show <span className="text-primary">*</span>
+                  {isShortDrama ? "Short Drama" : "TV Show"} <span className="text-primary">*</span>
                 </Label>
                 <Select value={showId} onValueChange={setShowId} disabled={loadingShows}>
                   <SelectTrigger className="bg-muted border-border text-foreground h-10 rounded-lg text-sm">
-                    <SelectValue placeholder={loadingShows ? "Loading…" : "Select TV Show"} />
+                    <SelectValue placeholder={loadingShows ? "Loading…" : isShortDrama ? "Select Short Drama" : "Select TV Show"} />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border text-foreground">
                     {tvShows.length === 0
@@ -537,7 +543,7 @@ export default function EpisodeForm() {
                 <p><span className="text-muted-foreground">Transcoding:</span> {processingData.data.processingStatus === "processing" ? "In progress" : processingData.data.processingStatus === "ready" ? "Complete" : processingData.data.processingStatus}</p>
                 <p><span className="text-muted-foreground">CDN:</span> {processingData.data.hlsUrl ? "Available" : "Waiting"}</p>
                 <p><span className="text-muted-foreground">Playback:</span> {processingData.data.playbackReady ? "Ready" : "Not ready"}</p>
-                {processingData.data.processingError && (
+                {processingData.data.processingStatus !== "ready" && processingData.data.processingError && (
                   <p className="text-destructive">{processingData.data.processingError}</p>
                 )}
               </div>
@@ -830,7 +836,7 @@ export default function EpisodeForm() {
       </div>
 
       <div className="flex justify-end gap-3">
-        <Button variant="outline" onClick={() => setLocation("/episodes")} className="border-border">Cancel</Button>
+        <Button variant="outline" onClick={() => setLocation(episodeListUrl)} className="border-border">Cancel</Button>
         <Button
           onClick={handleSave}
           disabled={isSaving}
