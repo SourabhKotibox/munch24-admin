@@ -80,7 +80,7 @@ export const getImageUrl = (filePath: any) => {
           if (s.doPathStyle) {
             return `https://${s.doRegion}.digitaloceanspaces.com/${s.doBucket}/${cleanKey}`;
           }
-          return `https://${s.doBucket}.${s.doRegion}.digitaloceanspaces.com/${cleanKey}`;
+          return `https://${s.doBucket}.${s.doRegion}.cdn.digitaloceanspaces.com/${cleanKey}`;
         }
       }
 
