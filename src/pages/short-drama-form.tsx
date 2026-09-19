@@ -346,7 +346,6 @@ export default function ShortDramaForm() {
         slug: slug.trim(),
         metaTitle: metaTitle.trim(),
         metaDescription: metaDescription.trim(),
-        seoImage: seoImage.filePath,
       };
 
       if (isEdit) {

@@ -488,7 +488,6 @@ export default function MovieForm() {
         slug: slug.trim(),
         metaTitle: metaTitle.trim(),
         metaDescription: metaDescription.trim(),
-        seoImage: seoImage.filePath,
       };
 
       if (isEdit) {
