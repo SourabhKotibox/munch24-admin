@@ -62,10 +62,11 @@ export default function MediaPicker({ open, onClose, onSelect, source, accept = 
   const handleConfirm = async () => {
     if (mode === "library" && selectedMedia) {
       // Pass the entire media object
+      const bestUrl = selectedMedia.url?.startsWith("http") ? selectedMedia.url : (selectedMedia.filePath || selectedMedia.url);
       onSelect({
         ...selectedMedia,
-        url: getImageUrl(selectedMedia.filePath || selectedMedia.url),
-        filePath: selectedMedia.filePath || selectedMedia.url,
+        url: getImageUrl(bestUrl),
+        filePath: bestUrl,
       });
       handleClose();
     } else if (mode === "upload" && selectedMedia?.file) {
@@ -98,10 +99,11 @@ export default function MediaPicker({ open, onClose, onSelect, source, accept = 
 
         const uploadedFile = result?.data?.[0];
         if (uploadedFile) {
+          const bestUrl = uploadedFile.url?.startsWith("http") ? uploadedFile.url : (uploadedFile.filePath || uploadedFile.url);
           onSelect({
             ...uploadedFile,
-            url: getImageUrl(uploadedFile.filePath || uploadedFile.url),
-            filePath: uploadedFile.filePath || uploadedFile.url,
+            url: getImageUrl(bestUrl),
+            filePath: bestUrl,
           });
         } else {
           onSelect({ url: preview || "", filePath: "", name: selectedMedia.name });

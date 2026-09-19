@@ -29,20 +29,26 @@ type ApiOptions = RequestInit & {
   useAdminToken?: boolean;
 };
 
-export const getImageUrl = (filePath) => {
+export const getImageUrl = (filePath: any) => {
   if (!filePath) return "";
   if (String(filePath).startsWith("pending://")) return "";
 
-  if (filePath.startsWith("http")) {
-    return filePath;
+  const pathStr = String(filePath).trim();
+
+  if (pathStr.startsWith("http://") || pathStr.startsWith("https://")) {
+    return pathStr;
   }
 
-  if (filePath.startsWith("/uploads/") || filePath.startsWith("uploads/")) {
-    const cleanPath = filePath.startsWith("/") ? filePath.slice(1) : filePath;
+  if (pathStr.startsWith("/uploads/") || pathStr.startsWith("uploads/")) {
+    const cleanPath = pathStr.startsWith("/") ? pathStr.slice(1) : pathStr;
     return `${baseUrl}/${cleanPath}`;
   }
 
-  return `${baseUrl}/${filePath}`;
+  if (pathStr.startsWith("/")) {
+    return `${baseUrl}/uploads${pathStr}`;
+  }
+
+  return `${baseUrl}/uploads/${pathStr}`;
 };
 
 export const setBaseUrl = (url) => {
