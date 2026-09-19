@@ -311,7 +311,7 @@ export default function LanguagesList() {
         open={mediaPickerOpen}
         onClose={() => setMediaPickerOpen(false)}
         onSelect={(media) => {
-          setFormData({ ...formData, image: media.filePath });
+          setFormData({ ...formData, image: media.url || media.filePath });
           setMediaPickerOpen(false);
         }}
         source="language"

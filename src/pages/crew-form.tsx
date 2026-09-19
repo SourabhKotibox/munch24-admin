@@ -157,8 +157,8 @@ export default function CrewFormPage() {
         open={mediaPickerOpen}
         onClose={() => setMediaPickerOpen(false)}
         onSelect={(media) => {
-          setImage(media.filePath);
-          setImagePreview(getImageUrl(media.filePath));
+          setImage(media.url || media.filePath);
+          setImagePreview(getImageUrl(media.url || media.filePath));
         }}
         source="crew"
         accept="image/*"

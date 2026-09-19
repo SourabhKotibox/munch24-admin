@@ -31,24 +31,76 @@ type ApiOptions = RequestInit & {
 
 export const getImageUrl = (filePath: any) => {
   if (!filePath) return "";
-  if (String(filePath).startsWith("pending://")) return "";
+  if (typeof filePath === "object") {
+    filePath = filePath.url || filePath.filePath || "";
+  }
+  if (!filePath || String(filePath).startsWith("pending://")) return "";
 
-  const pathStr = String(filePath).trim();
+  let pathStr = String(filePath).trim();
 
+  // 1. If it's a full URL
   if (pathStr.startsWith("http://") || pathStr.startsWith("https://")) {
-    return pathStr;
+    try {
+      const parsed = new URL(pathStr);
+      const isOurOrigin = typeof window !== 'undefined'
+        ? (parsed.origin === window.location.origin || parsed.hostname === 'manch24.com' || parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1')
+        : (pathStr.includes('manch24.com') || pathStr.includes('localhost'));
+
+      // If it points to our domain but the path is NOT /uploads/ and NOT an API/static asset route
+      // (e.g. https://manch24.com/1789810809428-... or https://manch24.com/media/...)
+      if (isOurOrigin && !parsed.pathname.startsWith('/uploads/') && !parsed.pathname.startsWith('/api/') && !parsed.pathname.startsWith('/assets/')) {
+        pathStr = parsed.pathname.replace(/^\/+/, '');
+      } else {
+        return pathStr;
+      }
+    } catch {
+      return pathStr;
+    }
   }
 
+  // 2. Explicit /uploads/ paths (local disk)
   if (pathStr.startsWith("/uploads/") || pathStr.startsWith("uploads/")) {
     const cleanPath = pathStr.startsWith("/") ? pathStr.slice(1) : pathStr;
     return `${baseUrl}/${cleanPath}`;
   }
 
-  if (pathStr.startsWith("/")) {
-    return `${baseUrl}/uploads${pathStr}`;
-  }
+  // 3. Check cached settings for configured Cloud Storage driver (DigitalOcean / Bunny / S3)
+  try {
+    const rawSettings = typeof window !== 'undefined' ? localStorage.getItem("tripleMindesSettings") : null;
+    if (rawSettings) {
+      const s = JSON.parse(rawSettings);
+      let cleanKey = pathStr.replace(/^\/+/, "");
+      if (cleanKey.startsWith("uploads/")) cleanKey = cleanKey.replace(/^uploads\//, "");
 
-  return `${baseUrl}/uploads/${pathStr}`;
+      if (s.storageDriver === "digitalocean") {
+        if (s.doCdnUrl) {
+          return `${s.doCdnUrl.replace(/\/$/, "")}/${cleanKey}`;
+        }
+        if (s.doBucket && s.doRegion) {
+          if (s.doPathStyle) {
+            return `https://${s.doRegion}.digitaloceanspaces.com/${s.doBucket}/${cleanKey}`;
+          }
+          return `https://${s.doBucket}.${s.doRegion}.digitaloceanspaces.com/${cleanKey}`;
+        }
+      }
+
+      if (s.storageDriver === "bunny" && (s.bunnyCdnUrl || s.bunnyStorageZone)) {
+        const cdn = s.bunnyCdnUrl || `https://${s.bunnyStorageZone}.b-cdn.net`;
+        return `${cdn.replace(/\/$/, "")}/${cleanKey}`;
+      }
+
+      if (s.storageDriver === "s3" && s.awsBucket && s.awsRegion) {
+        if (s.awsPathStyleEndpoint) {
+          return `https://s3.${s.awsRegion}.amazonaws.com/${s.awsBucket}/${cleanKey}`;
+        }
+        return `https://${s.awsBucket}.s3.${s.awsRegion}.amazonaws.com/${cleanKey}`;
+      }
+    }
+  } catch {}
+
+  // 4. Default Local Storage fallback
+  const clean = pathStr.startsWith("/") ? pathStr.slice(1) : pathStr;
+  return `${baseUrl}/uploads/${clean}`;
 };
 
 export const setBaseUrl = (url) => {

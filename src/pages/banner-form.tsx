@@ -614,7 +614,7 @@ export default function BannerForm() {
       <MediaPicker
         open={thumbnailPickerOpen}
         onClose={() => setThumbnailPickerOpen(false)}
-        onSelect={(media) => setThumbnailOverride(media.url)}
+        onSelect={(media) => setThumbnailOverride(media.url || media.filePath)}
         source="banner"
         accept="image/*"
       />

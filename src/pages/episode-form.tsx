@@ -448,7 +448,7 @@ export default function EpisodeForm() {
             <MediaPicker
               open={thumbnailPickerOpen}
               onClose={() => setThumbnailPickerOpen(false)}
-              onSelect={(media) => { setThumbnailUrl(media.filePath || media.url); setThumbnailPickerOpen(false); }}
+              onSelect={(media) => { setThumbnailUrl(media.url || media.filePath); setThumbnailPickerOpen(false); }}
               source="tv-show"
               accept="image/*"
             />

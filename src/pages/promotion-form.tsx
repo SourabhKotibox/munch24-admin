@@ -685,7 +685,7 @@ export default function PromotionForm() {
         open={thumbnailPickerOpen}
         onClose={() => setThumbnailPickerOpen(false)}
         onSelect={(media) => {
-          setFormData({ ...formData, thumbnailUrl: media.filePath || media.url });
+          setFormData({ ...formData, thumbnailUrl: media.url || media.filePath });
           setThumbnailPickerOpen(false);
         }}
         source="promotion"
@@ -696,7 +696,7 @@ export default function PromotionForm() {
         open={videoPickerOpen}
         onClose={() => setVideoPickerOpen(false)}
         onSelect={(media) => {
-          setFormData({ ...formData, videoUrl: media.filePath || media.url });
+          setFormData({ ...formData, videoUrl: media.url || media.filePath });
           setVideoPickerOpen(false);
         }}
         source="promotion"

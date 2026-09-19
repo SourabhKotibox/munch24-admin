@@ -398,7 +398,7 @@ export default function ShowForm() {
                   <MediaPicker
                     open={thumbnailPickerOpen}
                     onClose={() => setThumbnailPickerOpen(false)}
-                    onSelect={(media) => setFormData((prev) => ({ ...prev, thumbnail: media.filePath || media.url }))}
+                    onSelect={(media) => setFormData((prev) => ({ ...prev, thumbnail: media.url || media.filePath }))}
                     source="show"
                     accept="image/*"
                   />
@@ -443,7 +443,7 @@ export default function ShowForm() {
                   <MediaPicker
                     open={bannerPickerOpen}
                     onClose={() => setBannerPickerOpen(false)}
-                    onSelect={(media) => setFormData((prev) => ({ ...prev, bannerImage: media.filePath || media.url }))}
+                    onSelect={(media) => setFormData((prev) => ({ ...prev, bannerImage: media.url || media.filePath }))}
                     source="show"
                     accept="image/*"
                   />

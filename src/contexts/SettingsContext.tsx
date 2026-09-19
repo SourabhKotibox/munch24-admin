@@ -277,6 +277,27 @@ const DEFAULT: AppSettings = {
 const STORAGE_KEY = "tripleMindesSettings";
 
 function mapApiData(api: any): AppSettings {
+  // Sync storage settings to localStorage first so getImageUrl has them
+  try {
+    const existingRaw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+    const existing = existingRaw ? JSON.parse(existingRaw) : {};
+    const updatedStorage = {
+      ...existing,
+      storageDriver: api.storageDriver || existing.storageDriver || DEFAULT.storageDriver,
+      doBucket: api.doBucket || existing.doBucket || "",
+      doRegion: api.doRegion || existing.doRegion || "nyc3",
+      doCdnUrl: api.doCdnUrl || existing.doCdnUrl || "",
+      doPathStyle: api.doPathStyle ?? existing.doPathStyle ?? true,
+      awsBucket: api.awsBucket || existing.awsBucket || "",
+      awsRegion: api.awsRegion || existing.awsRegion || "",
+      bunnyStorageZone: api.bunnyStorageZone || existing.bunnyStorageZone || "",
+      bunnyCdnUrl: api.bunnyCdnUrl || existing.bunnyCdnUrl || "",
+    };
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedStorage));
+    }
+  } catch {}
+
   const img = (v: string) => (v ? getImageUrl(v) : "");
   return {
     logoUrl: img(api.logoUrl),

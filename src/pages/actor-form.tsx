@@ -196,8 +196,8 @@ export default function ActorFormPage() {
         open={mediaPickerOpen}
         onClose={() => setMediaPickerOpen(false)}
         onSelect={(media) => {
-          set("image", media.filePath);
-          setImagePreview(getImageUrl(media.filePath));
+          set("image", media.url || media.filePath);
+          setImagePreview(getImageUrl(media.url || media.filePath));
         }}
         source="actor"
         accept="image/*"

@@ -270,7 +270,7 @@ export default function MediaLibraryPage() {
   };
 
   const handleCopyUrl = useCallback((file: any) => {
-    const url = getImageUrl(file.filePath || file.url);
+    const url = getImageUrl(file.url || file.filePath);
     navigator.clipboard.writeText(url).then(() => {
       setCopiedId(file._id);
       setTimeout(() => setCopiedId(null), 2000);
@@ -553,13 +553,13 @@ export default function MediaLibraryPage() {
                   <div className="relative rounded-xl overflow-hidden bg-muted border border-border aspect-[4/3] hover:border-primary/50 transition-all duration-200">
                     {file.fileType?.startsWith("video") ? (
                       <video
-                        src={`${getImageUrl(file.filePath || file.url)}#t=0.5`}
+                        src={`${getImageUrl(file.url || file.filePath)}#t=0.5`}
                         preload="metadata"
                         className="w-full h-full object-contain bg-zinc-800"
                       />
                     ) : (
                       <img
-                        src={getImageUrl(file.filePath || file.url)}
+                        src={getImageUrl(file.url || file.filePath)}
                         alt={file.name}
                         className="w-full h-full object-contain bg-zinc-800"
                         loading="lazy"
@@ -644,9 +644,9 @@ export default function MediaLibraryPage() {
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted shrink-0">
                             {file.fileType?.startsWith("video") ? (
-                              <video src={`${getImageUrl(file.filePath || file.url)}#t=0.5`} preload="metadata" className="w-full h-full object-cover" />
+                              <video src={`${getImageUrl(file.url || file.filePath)}#t=0.5`} preload="metadata" className="w-full h-full object-cover" />
                             ) : (
-                              <img src={getImageUrl(file.filePath || file.url)} alt={file.name} className="w-full h-full object-cover" loading="lazy" />
+                              <img src={getImageUrl(file.url || file.filePath)} alt={file.name} className="w-full h-full object-cover" loading="lazy" />
                             )}
                           </div>
                           <div className="flex flex-col">
@@ -783,9 +783,9 @@ export default function MediaLibraryPage() {
             {duplicateFiles.map(({ existing, new: newFile }, i) => (
               <div key={i} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
                 {existing.fileType?.startsWith("video") ? (
-                  <video src={`${getImageUrl(existing.filePath || existing.url)}#t=0.5`} preload="metadata" className="h-11 w-11 rounded object-contain bg-zinc-800" />
+                  <video src={`${getImageUrl(existing.url || existing.filePath)}#t=0.5`} preload="metadata" className="h-11 w-11 rounded object-contain bg-zinc-800" />
                 ) : (
-                  <img src={getImageUrl(existing.filePath || existing.url)} alt={existing.name} className="h-11 w-11 rounded object-contain bg-zinc-800" />
+                  <img src={getImageUrl(existing.url || existing.filePath)} alt={existing.name} className="h-11 w-11 rounded object-contain bg-zinc-800" />
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{existing.name}</p>
@@ -853,13 +853,13 @@ export default function MediaLibraryPage() {
                 <div className="rounded-xl overflow-hidden bg-muted border border-border flex items-center justify-center max-h-[300px] aspect-video">
                   {previewMedia.fileType?.startsWith("video") ? (
                     <video
-                      src={getImageUrl(previewMedia.filePath || previewMedia.url)}
+                      src={getImageUrl(previewMedia.url || previewMedia.filePath)}
                       controls
                       className="w-full h-full object-contain max-h-[300px] bg-black"
                     />
                   ) : (
                     <img
-                      src={getImageUrl(previewMedia.filePath || previewMedia.url)}
+                      src={getImageUrl(previewMedia.url || previewMedia.filePath)}
                       alt={previewMedia.name}
                       className="w-full h-full object-contain max-h-[300px]"
                     />
@@ -888,7 +888,7 @@ export default function MediaLibraryPage() {
                   </div>
                   <div className="col-span-2">
                     <p className="text-muted-foreground font-medium">Full URL</p>
-                    <p className="font-mono bg-muted/60 p-1.5 rounded border border-border/40 text-[10px] text-foreground break-all mt-0.5">{getImageUrl(previewMedia.filePath || previewMedia.url)}</p>
+                    <p className="font-mono bg-muted/60 p-1.5 rounded border border-border/40 text-[10px] text-foreground break-all mt-0.5">{getImageUrl(previewMedia.url || previewMedia.filePath)}</p>
                   </div>
                 </div>
               </div>
@@ -910,7 +910,7 @@ export default function MediaLibraryPage() {
                   className="bg-primary hover:bg-primary/90 text-white"
                   onClick={() => {
                     const link = document.createElement('a');
-                    link.href = getImageUrl(previewMedia.filePath || previewMedia.url);
+                    link.href = getImageUrl(previewMedia.url || previewMedia.filePath);
                     link.download = previewMedia.name;
                     link.target = '_blank';
                     link.click();

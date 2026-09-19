@@ -252,7 +252,7 @@ export default function MediaPicker({ open, onClose, onSelect, source, accept = 
                           {media.fileType?.startsWith("video") ? (
                             <div className="w-full h-full relative">
                               <video
-                                src={getImageUrl(media.filePath || media.url) + "#t=0.5"}
+                                src={getImageUrl(media.url || media.filePath) + "#t=0.5"}
                                 preload="metadata"
                                 className="w-full h-full object-cover bg-zinc-800"
                               />
@@ -262,7 +262,7 @@ export default function MediaPicker({ open, onClose, onSelect, source, accept = 
                             </div>
                           ) : (
                             <img
-                              src={getImageUrl(media.filePath || media.url)}
+                              src={getImageUrl(media.url || media.filePath)}
                               alt={media.name}
                               className="w-full h-full object-cover bg-zinc-800"
                               loading="lazy"
@@ -291,9 +291,9 @@ export default function MediaPicker({ open, onClose, onSelect, source, accept = 
                 <div className="shrink-0 p-3 bg-muted/50 border border-border rounded-lg flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg overflow-hidden bg-zinc-800 shrink-0">
                     {selectedMedia.fileType?.startsWith("video") ? (
-                      <video src={getImageUrl(selectedMedia.filePath || selectedMedia.url) + "#t=0.5"} preload="metadata" className="w-full h-full object-cover" />
+                      <video src={getImageUrl(selectedMedia.url || selectedMedia.filePath) + "#t=0.5"} preload="metadata" className="w-full h-full object-cover" />
                     ) : (
-                      <img src={getImageUrl(selectedMedia.filePath || selectedMedia.url)} alt={selectedMedia.name} className="w-full h-full object-cover" />
+                      <img src={getImageUrl(selectedMedia.url || selectedMedia.filePath)} alt={selectedMedia.name} className="w-full h-full object-cover" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">

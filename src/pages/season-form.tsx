@@ -153,7 +153,7 @@ export default function SeasonForm() {
           <MediaPicker
             open={posterPickerOpen}
             onClose={() => setPosterPickerOpen(false)}
-            onSelect={(media) => { setPosterUrl(media.filePath || media.url); setPosterPickerOpen(false); }}
+            onSelect={(media) => { setPosterUrl(media.url || media.filePath); setPosterPickerOpen(false); }}
             source={isShortDrama ? "short-drama" : "tv-show"}
             accept="image/*"
           />

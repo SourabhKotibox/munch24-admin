@@ -185,8 +185,8 @@ export default function GenreFormPage() {
         open={mediaPickerOpen}
         onClose={() => setMediaPickerOpen(false)}
         onSelect={(media) => {
-          setImage(media.filePath);
-          setImagePreview(getImageUrl(media.filePath));
+          setImage(media.url || media.filePath);
+          setImagePreview(getImageUrl(media.url || media.filePath));
         }}
         source="genre"
         accept="image/*"

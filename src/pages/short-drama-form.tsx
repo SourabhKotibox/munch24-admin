@@ -303,9 +303,10 @@ export default function ShortDramaForm() {
         contentType: "drama",
         description: description.trim(),
         shortDescription: shortDescription.trim(),
-        thumbnail: thumbnail.filePath,
-        posterImage: poster.filePath,
-        bannerImage: banner.filePath,
+        thumbnail: thumbnail.filePath || thumbnail.preview,
+        posterImage: poster.filePath || poster.preview,
+        bannerImage: banner.filePath || banner.preview,
+        seoImage: seoImage.filePath || seoImage.preview,
         trailerUrl: effectiveTrailerUrl,
         planRequired,
         isFree: planRequired === "free",
@@ -1072,15 +1073,15 @@ export default function ShortDramaForm() {
 
       {/* Media Pickers */}
       <MediaPicker open={thumbnailPickerOpen} onClose={() => setThumbnailPickerOpen(false)}
-        onSelect={(m) => setThumbnail({ filePath: m.filePath, preview: m.url })} source="drama" accept="image/*" />
+        onSelect={(m) => setThumbnail({ filePath: m.url || m.filePath, preview: m.url || m.filePath })} source="drama" accept="image/*" />
       <MediaPicker open={posterPickerOpen} onClose={() => setPosterPickerOpen(false)}
-        onSelect={(m) => setPoster({ filePath: m.filePath, preview: m.url })} source="drama" accept="image/*" />
+        onSelect={(m) => setPoster({ filePath: m.url || m.filePath, preview: m.url || m.filePath })} source="drama" accept="image/*" />
       <MediaPicker open={bannerPickerOpen} onClose={() => setBannerPickerOpen(false)}
-        onSelect={(m) => setBanner({ filePath: m.filePath, preview: m.url })} source="drama" accept="image/*" />
+        onSelect={(m) => setBanner({ filePath: m.url || m.filePath, preview: m.url || m.filePath })} source="drama" accept="image/*" />
       <MediaPicker open={trailerPickerOpen} onClose={() => setTrailerPickerOpen(false)}
-        onSelect={(m) => setTrailerFilePath(m.filePath)} source="drama" accept="video/*" />
+        onSelect={(m) => setTrailerFilePath(m.url || m.filePath)} source="drama" accept="video/*" />
       <MediaPicker open={seoImagePickerOpen} onClose={() => setSeoImagePickerOpen(false)}
-        onSelect={(m) => setSeoImage({ filePath: m.filePath, preview: m.url })} source="drama" accept="image/*" />
+        onSelect={(m) => setSeoImage({ filePath: m.url || m.filePath, preview: m.url || m.filePath })} source="drama" accept="image/*" />
     </div>
   );
 }
