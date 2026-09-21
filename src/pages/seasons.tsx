@@ -30,7 +30,7 @@ export default function SeasonsPage() {
   const [confirmDelete, setConfirmDelete] = useState<any | null>(null);
   const [deletingSeasonEpisodes, setDeletingSeasonEpisodes] = useState(false);
 
-  const { data, isLoading } = useGetSeasonList({});
+  const { data, isLoading } = useGetSeasonList({ contentType: "series" });
   const { data: allEpisodesData } = useGetEpisodeList({ limit: 200 });
   const deleteEpisodeMutation = useDeleteEpisode();
 
