@@ -52,6 +52,7 @@ import {
   useTestEmail,
   getImageUrl,
   applyStorageCors,
+  makeHlsStoragePublic,
   useGetMessageGatewaySettings,
   useUpdateMessageGatewaySettings,
 } from "@/lib/api-client";
@@ -1706,24 +1707,41 @@ export default function Settings() {
                   <span className="text-sm text-muted-foreground">Enable path-style addressing</span>
                 </div>
               </div>
-              <div className="md:col-span-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="border-border"
-                  onClick={async () => {
-                    try {
-                      const result = await applyStorageCors();
-                      toast({ title: result?.data?.message || "Storage CORS updated for browser uploads" });
-                    } catch (error: any) {
-                      toast({ title: "Could not apply Spaces CORS", description: error.message, variant: "destructive" });
-                    }
-                  }}
-                >
-                  Enable browser direct uploads (CORS)
-                </Button>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Required so large movies upload from the admin browser straight to DigitalOcean Spaces. Secrets stay on the server.
+              <div className="md:col-span-2 space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="border-border"
+                    onClick={async () => {
+                      try {
+                        const result = await applyStorageCors();
+                        toast({ title: result?.data?.message || "Storage CORS updated for browser uploads" });
+                      } catch (error: any) {
+                        toast({ title: "Could not apply Spaces CORS", description: error.message, variant: "destructive" });
+                      }
+                    }}
+                  >
+                    Enable browser direct uploads (CORS)
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="border-border"
+                    onClick={async () => {
+                      try {
+                        const result = await makeHlsStoragePublic();
+                        toast({ title: result?.message || "Existing HLS videos set to public-read (403 Fixed)" });
+                      } catch (error: any) {
+                        toast({ title: "Could not update video permissions", description: error.message, variant: "destructive" });
+                      }
+                    }}
+                  >
+                    Make Existing Videos Public (Fix 403)
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Clicking "Enable CORS" sets bucket browser access. Clicking "Make Existing Videos Public" fixes 403 errors on previously uploaded HLS files by granting public read access.
                 </p>
               </div>
             </div>

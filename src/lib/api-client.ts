@@ -2072,6 +2072,10 @@ export const applyStorageCors = async () => {
   return api("/settings/storage/cors", { method: "POST", body: JSON.stringify({}) });
 };
 
+export const makeHlsStoragePublic = async () => {
+  return api("/settings/storage/make-public", { method: "POST", body: JSON.stringify({}) });
+};
+
 export const deleteMediaFile = async (fileId: string) => {
   return api(`/media/files/${fileId}`, { method: 'DELETE' });
 };
