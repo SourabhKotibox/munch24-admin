@@ -47,6 +47,7 @@ import {
   MessageSquare,
   Gift,
   TrendingUp,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -83,6 +84,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         { href: "/home-sections", label: "App Layout Builder", icon: LayoutList, permission: "categories" },
         { href: "/web-home-sections", label: "Web Layout Builder", icon: LayoutList, permission: "categories" },
         { href: "/new-hot", label: "New & Hot", icon: Flame, permission: "promotions" },
+        { href: "/upcoming", label: "Upcoming Content", icon: Calendar, permission: "movies" },
       ],
     },
     {

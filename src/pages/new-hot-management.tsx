@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import {
   Flame, Sparkles, TrendingUp, Star, Search,
-  ChevronLeft, ChevronRight, Loader2, Film, CheckCircle2, XCircle,
+  ChevronLeft, ChevronRight, Loader2, Film, CheckCircle2, XCircle, Calendar,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -10,12 +10,13 @@ import {
 
 const PAGE_SIZE = 20;
 type Tab = "movies" | "tvshows" | "dramas";
-type FlagKey = "isNewContent" | "trending" | "featured";
+type FlagKey = "isNewContent" | "trending" | "featured" | "isUpcoming";
 
-const FLAGS: { key: FlagKey; label: string; icon: typeof Sparkles }[] = [
+const FLAGS: { key: FlagKey; label: string; icon: any }[] = [
   { key: "isNewContent", label: "New", icon: Sparkles },
   { key: "trending",     label: "Trending", icon: TrendingUp },
   { key: "featured",     label: "Featured", icon: Star },
+  { key: "isUpcoming",   label: "Upcoming", icon: Calendar },
 ];
 
 const STATUS_STYLES: Record<string, string> = {

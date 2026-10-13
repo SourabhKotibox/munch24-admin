@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import { X, Crown, Check, Loader2, Sparkles, Flame, Play } from "lucide-react";
 import { useSettings } from "@/contexts/SettingsContext";
-import { useGetWebSubscriptionPlans, useCreateSubscriptionRazorpayOrder, useVerifySubscriptionRazorpayPayment } from "@/lib/api-client";
+import { 
+  useGetWebSubscriptionPlans, 
+  useCreateSubscriptionRazorpayOrder, 
+  useVerifySubscriptionRazorpayPayment,
+  useCreateSubscriptionPhonepeOrder 
+} from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -27,6 +32,7 @@ export default function SubscriptionPlansModal({ isOpen, onClose, onSubscribed }
   const { data: plansData, isLoading: loadingPlans } = useGetWebSubscriptionPlans();
   const createOrderMutation = useCreateSubscriptionRazorpayOrder();
   const verifyPaymentMutation = useVerifySubscriptionRazorpayPayment();
+  const createPhonepeOrderMutation = useCreateSubscriptionPhonepeOrder();
   const { user, updateUser } = useAuth();
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
@@ -59,6 +65,26 @@ export default function SubscriptionPlansModal({ isOpen, onClose, onSubscribed }
 
     try {
       setSelectedPlanId(plan.id || plan._id);
+
+      if (settings?.phonepeEnabled) {
+        const orderData: any = await createPhonepeOrderMutation.mutateAsync({
+          planId: plan.id || plan._id,
+          userId: user.id || user._id,
+        });
+        
+        if (orderData.isFree) {
+          updateUser({ subscriptionPlan: plan.name, subscriptionStatus: 'active' });
+          toast({ title: "Subscription Successful", description: `Successfully subscribed to ${plan.name}!` });
+          if (onSubscribed) onSubscribed();
+          onClose();
+          return;
+        }
+
+        if (orderData.url) {
+          window.location.href = orderData.url;
+        }
+        return;
+      }
 
       const orderData = await createOrderMutation.mutateAsync({
         planId: plan.id || plan._id,

@@ -193,6 +193,7 @@ import NewHotManagement from "@/pages/new-hot-management";
 import Reviews from "@/pages/reviews";
 import RewardsManagementPage from "@/pages/rewards-management";
 import RevenueAnalyticsPage from "@/pages/revenue-analytics";
+import UpcomingManagementPage from "@/pages/upcoming";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -246,6 +247,7 @@ const routePermissions: Record<string, string | null> = {
   "/coin-packages": "subscriptionPlans",
   "/rewards-management": "subscriptionPlans",
   "/revenue-analytics": "subscriptionPlans",
+  "/upcoming": "movies",
 };
 
 const hasPermissionForRoute = (path: string, user: any): boolean => {
@@ -391,6 +393,7 @@ function AdminRoutes() {
               <Route path="/web-home-sections" component={WebHomeSections} />
               <Route path="/reviews" component={Reviews} />
               <Route path="/new-hot" component={NewHotManagement} />
+              <Route path="/upcoming" component={UpcomingManagementPage} />
               <Route path="/influencers" component={InfluencersPage} />
               <Route path="/approvals" component={ApprovalsPage} />
               <Route path="/short-dramas/new" component={ShortDramaForm} />

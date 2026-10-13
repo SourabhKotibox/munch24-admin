@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import {
   useGetWebSubscriptionPlans,
   useCreateSubscriptionRazorpayOrder,
   useVerifySubscriptionRazorpayPayment,
   openRazorpayCheckout,
+  useCreateSubscriptionPhonepeOrder,
+  useVerifySubscriptionPhonepePayment,
 } from "@/lib/api-client";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -97,10 +99,40 @@ export default function MembershipPage() {
   const { data: plansData, isLoading } = useGetWebSubscriptionPlans();
   const createOrderMutation = useCreateSubscriptionRazorpayOrder();
   const verifyPaymentMutation = useVerifySubscriptionRazorpayPayment();
+  const createPhonepeOrderMutation = useCreateSubscriptionPhonepeOrder();
+  const verifyPhonepePaymentMutation = useVerifySubscriptionPhonepePayment();
 
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const provider = searchParams.get('provider');
+    const merchantOrderId = searchParams.get('merchantOrderId');
+    const planId = searchParams.get('planId');
+
+    if (provider === 'phonepe' && merchantOrderId && planId) {
+      setProcessing(true);
+      verifyPhonepePaymentMutation.mutateAsync({ merchantOrderId, planId })
+        .then((res: any) => {
+          if (res?.success) {
+            showToast("🎉 Subscription activated! Welcome to VIP!", "success");
+            if (user) {
+              updateUser({ subscriptionPlan: "premium", subscriptionStatus: "active" });
+            }
+            setTimeout(() => setLocation("/account"), 2000);
+          } else {
+            showToast(res?.error || "Payment verification failed", "error");
+          }
+        })
+        .catch(() => showToast("Payment verification failed", "error"))
+        .finally(() => {
+          setProcessing(false);
+          window.history.replaceState({}, document.title, window.location.pathname);
+        });
+    }
+  }, []);
 
   const plans: any[] = plansData?.data || plansData?.plans || [];
   const platformName = settings.platformName || "StreamIT";
@@ -136,6 +168,28 @@ export default function MembershipPage() {
     if (!selectedPlanId || processing) return;
     setProcessing(true);
     try {
+      if (settings?.phonepeEnabled) {
+        const orderRes: any = await createPhonepeOrderMutation.mutateAsync({ planId: selectedPlanId });
+        
+        if (orderRes?.success && orderRes?.isFree) {
+          showToast("🎉 Free plan activated successfully!", "success");
+          if (user) {
+            updateUser({ subscriptionPlan: selectedPlan?.name || "free", subscriptionStatus: "active" });
+          }
+          setTimeout(() => setLocation("/account"), 2000);
+          return;
+        }
+
+        if (!orderRes?.success || !orderRes?.url) {
+          showToast(orderRes?.error || "Payment gateway not configured. Contact support.", "error");
+          setProcessing(false);
+          return;
+        }
+
+        window.location.href = orderRes.url;
+        return;
+      }
+
       const orderRes: any = await createOrderMutation.mutateAsync({ planId: selectedPlanId });
       
       if (orderRes?.success && orderRes?.isFree) {
@@ -427,7 +481,9 @@ export default function MembershipPage() {
               {/* Payment Partner Info */}
               <div className="flex items-center justify-center gap-2 mt-4 text-muted-foreground/60">
                 <Shield className="w-3 h-3" />
-                <span className="text-[10px] font-semibold tracking-wide uppercase">Secured by Razorpay</span>
+                <span className="text-[10px] font-semibold tracking-wide uppercase">
+                  Secured by {settings?.phonepeEnabled ? "PhonePe" : "Razorpay"}
+                </span>
               </div>
             </div>
           </div>

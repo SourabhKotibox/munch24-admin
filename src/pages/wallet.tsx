@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import {
   useGetWalletData, useGetCoinPackages,
@@ -7,6 +7,7 @@ import {
   useGetRewardStatus, useClaimDailyReward,
   useGetPublicRewardDefinitions, useClaimRewardById,
   useDeleteTransaction, useClearTransactions,
+  useCreateWalletPhonepeOrder, useVerifyWalletPhonepePayment
 } from "@/lib/api-client";
 import { useSettings } from "@/contexts/SettingsContext";
 import {
@@ -167,6 +168,8 @@ export default function WalletPage() {
   const { data: packagesData, isLoading: loadingPackages } = useGetCoinPackages();
   const createOrderMutation = useCreateWalletRazorpayOrder();
   const verifyPaymentMutation = useVerifyWalletRazorpayPayment();
+  const createPhonepeOrderMutation = useCreateWalletPhonepeOrder();
+  const verifyPhonepePaymentMutation = useVerifyWalletPhonepePayment();
   const { data: rewardStatusData } = useGetRewardStatus();
   const claimDailyMutation = useClaimDailyReward();
   const { data: rewardDefinitions = [], isLoading: loadingRewards } = useGetPublicRewardDefinitions();
@@ -181,6 +184,33 @@ export default function WalletPage() {
   const [claimedRewardIds, setClaimedRewardIds] = useState<Set<string>>(new Set());
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
   const [tab, setTab] = useState<"topup" | "history" | "rewards">("rewards");
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const provider = searchParams.get('provider');
+    const merchantOrderId = searchParams.get('merchantOrderId');
+    const packageId = searchParams.get('packageId');
+
+    if (provider === 'phonepe' && merchantOrderId && packageId) {
+      setLoadingPkgId(packageId);
+      verifyPhonepePaymentMutation.mutateAsync({ merchantOrderId, packageId })
+        .then((res: any) => {
+          if (res?.success) {
+            showToast("✅ Coins added successfully!", "success");
+            refetchWallet();
+            setTab("history");
+          } else {
+            showToast(res?.error || "Payment verification failed", "error");
+          }
+        })
+        .catch(() => showToast("Payment verification failed", "error"))
+        .finally(() => {
+          setLoadingPkgId(null);
+          // Remove query params
+          window.history.replaceState({}, document.title, window.location.pathname);
+        });
+    }
+  }, []);
 
   const showToast = (msg: string, type: "success" | "error") => {
     setToast({ msg, type });
@@ -290,6 +320,14 @@ export default function WalletPage() {
   const handleBuy = async (pkg: any) => {
     try {
       setLoadingPkgId(pkg._id || pkg.id);
+      
+      if (settings?.phonepeEnabled) {
+        const orderRes: any = await createPhonepeOrderMutation.mutateAsync({ packageId: pkg._id || pkg.id });
+        if (!orderRes?.success || !orderRes?.url) throw new Error(orderRes?.error || "Failed to create order");
+        window.location.href = orderRes.url;
+        return;
+      }
+      
       const orderRes: any = await createOrderMutation.mutateAsync({ packageId: pkg._id || pkg.id });
       if (!orderRes?.success || !orderRes?.order) throw new Error(orderRes?.error || "Failed to create order");
 
@@ -631,7 +669,7 @@ export default function WalletPage() {
                   <div className="flex items-center justify-between pb-4 border-b border-border/40">
                     <div>
                       <h2 className="text-lg font-black text-foreground">Coin Packages</h2>
-                      <p className="text-sm text-muted-foreground mt-1">Purchase coins securely using Razorpay.</p>
+                      <p className="text-sm text-muted-foreground mt-1">Purchase coins securely using {settings?.phonepeEnabled ? "PhonePe" : "Razorpay"}.</p>
                     </div>
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-xl border border-border/50">
                       <Shield className="w-4 h-4 text-muted-foreground" />

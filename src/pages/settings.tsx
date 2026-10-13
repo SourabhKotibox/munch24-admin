@@ -790,6 +790,12 @@ export default function Settings() {
     razorpayEnabled: ctxSettings.razorpayEnabled ?? false,
     razorpayKeyId: ctxSettings.razorpayKeyId || "",
     razorpayKeySecret: ctxSettings.razorpayKeySecret || "",
+    phonepeEnabled: ctxSettings.phonepeEnabled ?? false,
+    phonepeMerchantId: ctxSettings.phonepeMerchantId || "",
+    phonepeClientId: ctxSettings.phonepeClientId || "",
+    phonepeClientSecret: ctxSettings.phonepeClientSecret || "",
+    phonepeClientVersion: ctxSettings.phonepeClientVersion ?? 1,
+    phonepeTestMode: ctxSettings.phonepeTestMode ?? true,
   });
 
   useEffect(() => {
@@ -797,11 +803,23 @@ export default function Settings() {
       razorpayEnabled: ctxSettings.razorpayEnabled ?? false,
       razorpayKeyId: ctxSettings.razorpayKeyId || "",
       razorpayKeySecret: ctxSettings.razorpayKeySecret || "",
+      phonepeEnabled: ctxSettings.phonepeEnabled ?? false,
+      phonepeMerchantId: ctxSettings.phonepeMerchantId || "",
+      phonepeClientId: ctxSettings.phonepeClientId || "",
+      phonepeClientSecret: ctxSettings.phonepeClientSecret || "",
+      phonepeClientVersion: ctxSettings.phonepeClientVersion ?? 1,
+      phonepeTestMode: ctxSettings.phonepeTestMode ?? true,
     });
   }, [
     ctxSettings.razorpayEnabled,
     ctxSettings.razorpayKeyId,
     ctxSettings.razorpayKeySecret,
+    ctxSettings.phonepeEnabled,
+    ctxSettings.phonepeMerchantId,
+    ctxSettings.phonepeClientId,
+    ctxSettings.phonepeClientSecret,
+    ctxSettings.phonepeClientVersion,
+    ctxSettings.phonepeTestMode,
   ]);
 
   const handleSavePayment = async () => {
@@ -811,11 +829,23 @@ export default function Settings() {
         razorpayEnabled: payment.razorpayEnabled,
         razorpayKeyId: payment.razorpayKeyId,
         razorpayKeySecret: payment.razorpayKeySecret,
+        phonepeEnabled: payment.phonepeEnabled,
+        phonepeMerchantId: payment.phonepeMerchantId,
+        phonepeClientId: payment.phonepeClientId,
+        phonepeClientSecret: payment.phonepeClientSecret,
+        phonepeClientVersion: payment.phonepeClientVersion,
+        phonepeTestMode: payment.phonepeTestMode,
       });
       updateCtx({
         razorpayEnabled: payment.razorpayEnabled,
         razorpayKeyId: payment.razorpayKeyId,
         razorpayKeySecret: payment.razorpayKeySecret,
+        phonepeEnabled: payment.phonepeEnabled,
+        phonepeMerchantId: payment.phonepeMerchantId,
+        phonepeClientId: payment.phonepeClientId,
+        phonepeClientSecret: payment.phonepeClientSecret,
+        phonepeClientVersion: payment.phonepeClientVersion,
+        phonepeTestMode: payment.phonepeTestMode,
       });
       await refreshSettings();
       toast({ title: "Payment settings saved!" });
@@ -1951,6 +1981,73 @@ export default function Settings() {
                 className={inputCls}
               />
               <p className="text-xs text-muted-foreground">Keep this secure. Do not share it publicly.</p>
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-background/50 mt-6">
+          <div className="space-y-0.5">
+            <Label className="text-base text-foreground font-semibold">Enable PhonePe</Label>
+            <p className="text-sm text-muted-foreground">
+              Turn on to allow users to pay using PhonePe gateway.
+            </p>
+          </div>
+          <Switch
+            checked={payment.phonepeEnabled}
+            onCheckedChange={(c) => setPayment({ ...payment, phonepeEnabled: c })}
+            className="data-[state=checked]:bg-primary"
+          />
+        </div>
+
+        {payment.phonepeEnabled && (
+          <div className="space-y-4 p-4 border border-border rounded-lg bg-background/50 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center justify-between pb-4 border-b border-border">
+              <div className="space-y-0.5">
+                <Label className="text-base font-semibold">Test Mode (Sandbox)</Label>
+                <p className="text-sm text-muted-foreground">Enable to use PhonePe UAT environment for testing.</p>
+              </div>
+              <Switch
+                checked={payment.phonepeTestMode}
+                onCheckedChange={(c) => setPayment({ ...payment, phonepeTestMode: c })}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label className={labelCls}>Merchant ID</Label>
+              <Input
+                value={payment.phonepeMerchantId}
+                onChange={(e) => setPayment({ ...payment, phonepeMerchantId: e.target.value })}
+                placeholder="PGTESTPAYUAT..."
+                className={inputCls}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className={labelCls}>Client ID</Label>
+              <Input
+                value={payment.phonepeClientId}
+                onChange={(e) => setPayment({ ...payment, phonepeClientId: e.target.value })}
+                placeholder="Enter Client ID"
+                className={inputCls}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className={labelCls}>Client Secret</Label>
+              <SecretInput
+                value={payment.phonepeClientSecret}
+                onChange={(e) => setPayment({ ...payment, phonepeClientSecret: e.target.value })}
+                placeholder="Enter Client Secret"
+                className={inputCls}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className={labelCls}>Client Version</Label>
+              <Input
+                type="number"
+                value={payment.phonepeClientVersion}
+                onChange={(e) => setPayment({ ...payment, phonepeClientVersion: parseInt(e.target.value) || 1 })}
+                placeholder="1"
+                className={inputCls}
+              />
             </div>
           </div>
         )}

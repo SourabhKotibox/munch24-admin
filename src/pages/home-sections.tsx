@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  Plus, Trash2, Edit2, GripVertical, Check, Globe, EyeOff, LayoutGrid, List, Film, Layers, MonitorPlay, Save, X
+  Plus, Trash2, Edit2, GripVertical, Check, Globe, EyeOff, LayoutGrid, List, Film, Layers, MonitorPlay, Save, X, Tv
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -146,7 +146,7 @@ const SortableSection = ({ section, onToggle, onEdit, onDelete }: SortableSectio
 
 export default function HomeSections() {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'drama' | 'movie'>('drama');
+  const [activeTab, setActiveTab] = useState<'drama' | 'movie' | 'series'>('drama');
   
   const { data: sectionsData, isLoading } = useGetSections({ contentType: activeTab });
   const createMutation = useCreateSection();
@@ -165,15 +165,24 @@ export default function HomeSections() {
   const [isEditingTabName, setIsEditingTabName] = useState(false);
   const [tabNameInput, setTabNameInput] = useState('');
 
-  const tabsConfig = tabsConfigRes?.data || [
+  let tabsConfig = tabsConfigRes?.data || [
     { id: 'drama', name: 'Short Dramas' },
-    { id: 'movie', name: 'Movies & Series' }
+    { id: 'movie', name: 'Movies' },
+    { id: 'series', name: 'TV Shows' },
   ];
-  const activeTabName = tabsConfig.find((t: any) => t.id === activeTab)?.name || (activeTab === 'drama' ? 'Short Dramas' : 'Movies & Series');
+  if (Array.isArray(tabsConfig) && !tabsConfig.some((t: any) => t.id === 'series' || t.id === 'tv' || t.id === 'tvshows')) {
+    tabsConfig = [...tabsConfig, { id: 'series', name: 'TV Shows' }];
+  }
+
+  const activeTabName = tabsConfig.find((t: any) => t.id === activeTab || (activeTab === 'series' && (t.id === 'tv' || t.id === 'tvshows')))?.name 
+    || (activeTab === 'drama' ? 'Short Dramas' : activeTab === 'movie' ? 'Movies' : 'TV Shows');
 
   const handleSaveTabName = () => {
     if (!tabNameInput.trim()) return;
-    const newTabs = tabsConfig.map((t: any) => t.id === activeTab ? { ...t, name: tabNameInput } : t);
+    const exists = tabsConfig.some((t: any) => t.id === activeTab);
+    const newTabs = exists
+      ? tabsConfig.map((t: any) => t.id === activeTab ? { ...t, name: tabNameInput } : t)
+      : [...tabsConfig, { id: activeTab, name: tabNameInput }];
     updateTabsMutation.mutate(newTabs, {
       onSuccess: () => {
         setIsEditingTabName(false);
@@ -391,7 +400,13 @@ export default function HomeSections() {
             onClick={() => { setActiveTab('movie'); setIsEditingTabName(false); }}
             className={`flex items-center gap-2 px-5 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'movie' ? 'bg-primary text-primary-foreground dark:text-white shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-muted dark:text-foreground/70 dark:hover:text-foreground dark:hover:bg-white/5'}`}
           >
-            <Film className="w-4 h-4" /> {tabsConfig.find((t: any) => t.id === 'movie')?.name || 'Movies & Series'}
+            <Film className="w-4 h-4" /> {tabsConfig.find((t: any) => t.id === 'movie')?.name || 'Movies'}
+          </button>
+          <button
+            onClick={() => { setActiveTab('series'); setIsEditingTabName(false); }}
+            className={`flex items-center gap-2 px-5 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'series' ? 'bg-primary text-primary-foreground dark:text-white shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-muted dark:text-foreground/70 dark:hover:text-foreground dark:hover:bg-white/5'}`}
+          >
+            <Tv className="w-4 h-4" /> {tabsConfig.find((t: any) => t.id === 'series' || t.id === 'tv')?.name || 'TV Shows'}
           </button>
         </div>
         
@@ -544,6 +559,7 @@ export default function HomeSections() {
                           <SelectItem value="trending">Trending Status</SelectItem>
                           <SelectItem value="featured">Featured Status</SelectItem>
                           <SelectItem value="isNewContent">New Release</SelectItem>
+                          <SelectItem value="isUpcoming">Upcoming Release</SelectItem>
                           <SelectItem value="genres">Genre Match</SelectItem>
                           <SelectItem value="mediaType">Media Type (Movie/Series)</SelectItem>
                         </SelectContent>
@@ -603,12 +619,17 @@ export default function HomeSections() {
                       <SelectValue placeholder="Click to add a title..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {(activeTab === 'movie' 
-                        ? [...(moviesRes?.data || []), ...(dramasRes?.data || []).filter((i:any) => i.contentType === 'series')] 
-                        : (dramasRes?.data || []).filter((i:any) => i.contentType === 'drama')
+                      {(activeTab === 'drama'
+                        ? (dramasRes?.data || []).filter((i: any) => i.contentType === 'drama')
+                        : activeTab === 'series'
+                        ? (dramasRes?.data || []).filter((i: any) => i.contentType === 'series')
+                        : [
+                            ...(moviesRes?.data || []),
+                            ...(dramasRes?.data || []).filter((i: any) => i.contentType === 'movie')
+                          ]
                       ).map((item: any) => (
                         <SelectItem key={item._id} value={item._id}>
-                          {item.title} {item.contentType === 'series' ? '(TV Show)' : (item.contentType === 'drama' ? '(Short Drama)' : '')}
+                          {item.title} {item.contentType === 'series' ? '(TV Show)' : (item.contentType === 'drama' ? '(Short Drama)' : '(Movie)')}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -617,9 +638,7 @@ export default function HomeSections() {
                   {selectedItems.length > 0 && (
                     <div className="flex flex-col gap-2 mt-3 bg-muted/30 dark:bg-black/20 border border-border dark:border-white/5 p-2 rounded-md max-h-48 overflow-y-auto">
                       {selectedItems.map(id => {
-                        const allItems = activeTab === 'movie' 
-                          ? [...(moviesRes?.data || []), ...(dramasRes?.data || []).filter((i:any) => i.contentType === 'series')]
-                          : (dramasRes?.data || []).filter((i:any) => i.contentType === 'drama');
+                        const allItems = [...(moviesRes?.data || []), ...(dramasRes?.data || [])];
                         const matchedItem = allItems?.find((i: any) => i._id === id);
                         return (
                           <div key={id} className="flex items-center justify-between bg-muted/50 px-3 py-2 rounded-md text-sm border border-border/50">

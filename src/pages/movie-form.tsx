@@ -141,6 +141,7 @@ export default function MovieForm() {
   const [trending, setTrending] = useState(false);
   const [isNewContent, setIsNewContent] = useState(true);
   const [isExclusive, setIsExclusive] = useState(false);
+  const [isUpcoming, setIsUpcoming] = useState(false);
   const [maturityContent, setMaturityContent] = useState<string[]>([]);
   const [maturityInput, setMaturityInput] = useState("");
   const [castItems, setCastItems] = useState<CastItem[]>([]);
@@ -273,6 +274,7 @@ export default function MovieForm() {
     setTrending(!!movie.trending);
     setIsNewContent(movie.isNewContent !== false);
     setIsExclusive(!!movie.isExclusive);
+    setIsUpcoming(!!movie.isUpcoming);
     setMaturityContent(Array.isArray(movie.maturityContent) ? movie.maturityContent : []);
     setTags(Array.isArray(movie.tags) ? movie.tags : []);
 
@@ -462,6 +464,7 @@ export default function MovieForm() {
         trending,
         isNewContent,
         isExclusive,
+        isUpcoming,
         maturityContent,
         tags,
         sections: selectedSections,
@@ -966,6 +969,7 @@ export default function MovieForm() {
                   { label: "Trending", value: trending, setter: setTrending },
                   { label: "New Content", value: isNewContent, setter: setIsNewContent },
                   { label: "Exclusive", value: isExclusive, setter: setIsExclusive },
+                  { label: "Upcoming Release", value: isUpcoming, setter: setIsUpcoming },
                 ].map(({ label, value, setter }) => (
                   <div key={label} className="flex items-center justify-between p-3 rounded-xl border border-border bg-card">
                     <p className="text-sm font-medium text-foreground">{label}</p>

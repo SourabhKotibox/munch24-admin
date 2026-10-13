@@ -4250,6 +4250,69 @@ export const verifySubscriptionRazorpayPayment = async (data: {
   });
 };
 
+// ── PhonePe Wallet Top-up ───────────────────────────────────────────────────
+
+export const createWalletPhonepeOrder = async (data: { packageId: string }) => {
+  return api('/wallet/phonepe/order', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+};
+
+export const verifyWalletPhonepePayment = async (data: {
+  merchantOrderId: string;
+  packageId: string;
+}) => {
+  return api('/wallet/phonepe/verify', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+};
+
+// ── PhonePe Subscription Purchase ──────────────────────────────────────────
+
+export const createSubscriptionPhonepeOrder = async (data: { planId: string; userId?: string }) => {
+  return api('/app/subscription/phonepe/order', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+};
+
+export const verifySubscriptionPhonepePayment = async (data: {
+  merchantOrderId: string;
+  planId: string;
+  userId?: string;
+}) => {
+  return api('/app/subscription/phonepe/verify', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+};
+
+export const useCreateWalletPhonepeOrder = () => {
+  return useMutation({
+    mutationFn: createWalletPhonepeOrder,
+  });
+};
+
+export const useVerifyWalletPhonepePayment = () => {
+  return useMutation({
+    mutationFn: verifyWalletPhonepePayment,
+  });
+};
+
+export const useCreateSubscriptionPhonepeOrder = () => {
+  return useMutation({
+    mutationFn: createSubscriptionPhonepeOrder,
+  });
+};
+
+export const useVerifySubscriptionPhonepePayment = () => {
+  return useMutation({
+    mutationFn: verifySubscriptionPhonepePayment,
+  });
+};
+
 export const useCreateSubscriptionRazorpayOrder = () => {
   return useMutation({
     mutationFn: createSubscriptionRazorpayOrder,
@@ -4456,3 +4519,87 @@ export const useGetUnlockedEpisodes = () => {
     staleTime: 60 * 1000,
   });
 };
+
+// ─── Upcoming Content API ───────────────────────────────────────────────────
+
+export const getUpcomingContent = async (params?: { tab?: string; page?: number; limit?: number; search?: string }) => {
+  const query = new URLSearchParams();
+  if (params?.tab) query.set('tab', params.tab);
+  if (params?.page) query.set('page', String(params.page));
+  if (params?.limit) query.set('limit', String(params.limit));
+  if (params?.search) query.set('search', params.search);
+  const qStr = query.toString();
+  return api(`/app/upcoming${qStr ? `?${qStr}` : ''}`);
+};
+
+export const useGetUpcomingContent = (params?: { tab?: string; page?: number; limit?: number; search?: string }) => {
+  return useQuery({
+    queryKey: ['upcomingContent', params],
+    queryFn: () => getUpcomingContent(params),
+  });
+};
+
+export const toggleUpcomingReminder = async (contentId: string, type?: string) => {
+  return api(`/app/upcoming/${contentId}/remind`, {
+    method: 'POST',
+    body: JSON.stringify({ contentId, type }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+};
+
+export const useToggleUpcomingReminder = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ contentId, type }: { contentId: string; type?: string }) => toggleUpcomingReminder(contentId, type),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['upcomingContent'] });
+      queryClient.invalidateQueries({ queryKey: ['adminUpcomingList'] });
+    },
+  });
+};
+
+export const getAdminUpcomingList = async () => {
+  return api('/admin/upcoming');
+};
+
+export const useGetAdminUpcomingList = () => {
+  return useQuery({
+    queryKey: ['adminUpcomingList'],
+    queryFn: getAdminUpcomingList,
+  });
+};
+
+export const getAdminUpcomingCandidates = async (search?: string) => {
+  const q = search ? `?search=${encodeURIComponent(search)}` : '';
+  return api(`/admin/upcoming/candidates${q}`);
+};
+
+export const useGetAdminUpcomingCandidates = (search?: string) => {
+  return useQuery({
+    queryKey: ['adminUpcomingCandidates', search],
+    queryFn: () => getAdminUpcomingCandidates(search),
+  });
+};
+
+export const setAdminUpcoming = async (data: { id: string; type?: string; isUpcoming: boolean; releaseDate?: string }) => {
+  return api('/admin/upcoming/toggle', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: { 'Content-Type': 'application/json' },
+  });
+};
+
+export const useSetAdminUpcoming = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: setAdminUpcoming,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminUpcomingList'] });
+      queryClient.invalidateQueries({ queryKey: ['upcomingContent'] });
+      queryClient.invalidateQueries({ queryKey: ['adminUpcomingCandidates'] });
+      queryClient.invalidateQueries({ queryKey: ['movies'] });
+      queryClient.invalidateQueries({ queryKey: ['contentList'] });
+    },
+  });
+};
+

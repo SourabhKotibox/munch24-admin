@@ -128,6 +128,12 @@ export interface AppSettings {
   razorpayEnabled: boolean;
   razorpayKeyId: string;
   razorpayKeySecret: string;
+  phonepeEnabled: boolean;
+  phonepeMerchantId: string;
+  phonepeClientId: string;
+  phonepeClientSecret: string;
+  phonepeClientVersion: number;
+  phonepeTestMode: boolean;
   // Message Gateway
   otpEnabled: boolean;
   customerId: string;
@@ -264,6 +270,12 @@ const DEFAULT: AppSettings = {
   razorpayEnabled: false,
   razorpayKeyId: "",
   razorpayKeySecret: "",
+  phonepeEnabled: false,
+  phonepeMerchantId: "",
+  phonepeClientId: "",
+  phonepeClientSecret: "",
+  phonepeClientVersion: 1,
+  phonepeTestMode: true,
   // Message Gateway
   otpEnabled: false,
   customerId: "",
@@ -425,6 +437,12 @@ function mapApiData(api: any): AppSettings {
     razorpayEnabled: api.razorpayEnabled ?? DEFAULT.razorpayEnabled,
     razorpayKeyId: api.razorpayKeyId || "",
     razorpayKeySecret: api.razorpayKeySecret || "",
+    phonepeEnabled: api.phonepeEnabled ?? DEFAULT.phonepeEnabled,
+    phonepeMerchantId: api.phonepeMerchantId || "",
+    phonepeClientId: api.phonepeClientId || "",
+    phonepeClientSecret: api.phonepeClientSecret || "",
+    phonepeClientVersion: api.phonepeClientVersion ? Number(api.phonepeClientVersion) : DEFAULT.phonepeClientVersion,
+    phonepeTestMode: api.phonepeTestMode ?? DEFAULT.phonepeTestMode,
     // Message Gateway
     otpEnabled: api.otpEnabled ?? DEFAULT.otpEnabled,
     customerId: api.customerId || "",
@@ -570,7 +588,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         'bunnyStorageZone', 'bunnyAccessKey', 'bunnyCdnUrl',
         'mailUsername', 'mailPassword', 'mailHost', 'mailPort',
         'fcmServerKey', 'fcmSenderId', 'firebaseApiKey', 'firebaseProjectId', 'firebaseAppId',
-        'authToken',
+        'authToken', 'phonepeClientSecret'
       ] as const;
       let cached: Partial<AppSettings> = {};
       try {
