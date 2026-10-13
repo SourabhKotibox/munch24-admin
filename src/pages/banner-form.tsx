@@ -18,6 +18,8 @@ import {
   Upload,
   Link2,
   Image as ImageIcon2,
+  Play,
+  Video,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,6 +64,7 @@ type ContentItem = {
   year?: number;
   duration?: number;
   contentType?: string;
+  trailerUrl?: string;
 };
 
 type Episode = {
@@ -152,12 +155,14 @@ export default function BannerForm() {
     ctaLink: "",
     position: 0,
     isActive: true,
+    trailerUrl: "",
   });
 
   /* ---- append video state ---- */
   const [appendVideoFile, setAppendVideoFile] = useState<File | null>(null);
   const [thumbnailMode, setThumbnailMode] = useState("upload");
   const [thumbnailPickerOpen, setThumbnailPickerOpen] = useState(false);
+  const [trailerPickerOpen, setTrailerPickerOpen] = useState(false);
   const [thumbnailOverride, setThumbnailOverride] = useState("");
 
   /* ---- load edit data ---- */
@@ -171,6 +176,7 @@ export default function BannerForm() {
         ctaLink: bannerData.ctaLink || "",
         position: bannerData.position ?? 0,
         isActive: bannerData.isActive ?? true,
+        trailerUrl: bannerData.trailerUrl || bannerData.content?.trailerUrl || "",
       });
       setThumbnailOverride(
         bannerData.content?.thumbnail || bannerData.thumbnail || bannerData.imageUrl || ""
@@ -201,6 +207,7 @@ export default function BannerForm() {
         status: m.status,
         year: m.year,
         duration: m.duration,
+        trailerUrl: m.trailerUrl,
       }));
     }
     return (contentQuery.data?.data || []).map((c: any) => ({
@@ -212,6 +219,7 @@ export default function BannerForm() {
       status: c.status,
       year: c.year,
       contentType: c.contentType,
+      trailerUrl: c.trailerUrl,
     }));
   })();
 
@@ -223,6 +231,7 @@ export default function BannerForm() {
         title: selectedContent.title,
         subtitle: selectedContent.shortDescription || "",
         description: selectedContent.description || "",
+        trailerUrl: selectedContent.trailerUrl || prev.trailerUrl || "",
       }));
     }
   }, [selectedContent]);
@@ -258,6 +267,7 @@ export default function BannerForm() {
       if (publishing.ctaLink) fd.append("ctaLink", publishing.ctaLink);
       fd.append("position", publishing.position.toString());
       fd.append("isActive", publishing.isActive.toString());
+      if (publishing.trailerUrl) fd.append("trailerUrl", publishing.trailerUrl);
       if (thumbnailOverride) fd.append("thumbnail", thumbnailOverride);
       await updateMutation.mutateAsync({ bannerId: id, data: fd });
       toast({ title: "Banner updated successfully!" });
@@ -358,6 +368,8 @@ export default function BannerForm() {
               setThumbnailMode={setThumbnailMode}
               thumbnailPickerOpen={thumbnailPickerOpen}
               setThumbnailPickerOpen={setThumbnailPickerOpen}
+              trailerPickerOpen={trailerPickerOpen}
+              setTrailerPickerOpen={setTrailerPickerOpen}
             />
             <div className="flex justify-end gap-4 pt-2">
               <Button type="button" variant="ghost" onClick={() => setLocation("/banners")}>Cancel</Button>
@@ -592,6 +604,8 @@ export default function BannerForm() {
                 setThumbnailMode={setThumbnailMode}
                 thumbnailPickerOpen={thumbnailPickerOpen}
                 setThumbnailPickerOpen={setThumbnailPickerOpen}
+                trailerPickerOpen={trailerPickerOpen}
+                setTrailerPickerOpen={setTrailerPickerOpen}
               />
 
               <div className="flex justify-between pt-2">
@@ -618,6 +632,15 @@ export default function BannerForm() {
         source="banner"
         accept="image/*"
       />
+
+      {/* Media picker for trailer / video */}
+      <MediaPicker
+        open={trailerPickerOpen}
+        onClose={() => setTrailerPickerOpen(false)}
+        onSelect={(media) => setPublishing((prev) => ({ ...prev, trailerUrl: media.url || media.filePath }))}
+        source="banner"
+        accept="video/*"
+      />
     </div>
   );
 }
@@ -634,6 +657,7 @@ type PublishingCardProps = {
     ctaLink: string;
     position: number;
     isActive: boolean;
+    trailerUrl: string;
   };
   setPublishing: React.Dispatch<React.SetStateAction<PublishingCardProps["publishing"]>>;
   showThumbnail: boolean;
@@ -643,6 +667,8 @@ type PublishingCardProps = {
   setThumbnailMode: (v: string) => void;
   thumbnailPickerOpen: boolean;
   setThumbnailPickerOpen: (v: boolean) => void;
+  trailerPickerOpen: boolean;
+  setTrailerPickerOpen: (v: boolean) => void;
 };
 
 function PublishingCard({
@@ -655,6 +681,8 @@ function PublishingCard({
   setThumbnailMode,
   thumbnailPickerOpen,
   setThumbnailPickerOpen,
+  trailerPickerOpen,
+  setTrailerPickerOpen,
 }: PublishingCardProps) {
   const set = useCallback(
     (key: keyof typeof publishing, value: any) =>
@@ -702,6 +730,78 @@ function PublishingCard({
               placeholder="Brief description shown on the banner"
             />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Trailer & Video playback settings */}
+      <Card className="rounded-xl border-border/60">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Video className="w-4 h-4 text-primary" />
+                Banner Trailer & Video
+              </CardTitle>
+              <CardDescription>
+                Trailers play automatically in the mobile app hero carousel and banners. Supports YouTube links or direct MP4/HLS video.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="pub-trailer-url">Trailer URL (YouTube, MP4, HLS)</Label>
+            <div className="flex gap-2">
+              <Input
+                id="pub-trailer-url"
+                value={publishing.trailerUrl}
+                onChange={(e) => set("trailerUrl", e.target.value)}
+                placeholder="https://www.youtube.com/watch?v=... or /uploads/videos/...mp4"
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setTrailerPickerOpen(true)}
+                className="shrink-0"
+              >
+                <Upload className="w-4 h-4 mr-1.5" /> Media Library
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {publishing.trailerUrl ? (
+                <span className="text-emerald-400 font-medium">✓ Trailer configured: {publishing.trailerUrl}</span>
+              ) : (
+                "If left blank, the linked content's trailer or preview video will be played automatically."
+              )}
+            </p>
+          </div>
+
+          {publishing.trailerUrl && (
+            <div className="mt-3 rounded-lg overflow-hidden border border-border bg-black aspect-video max-h-56">
+              {(() => {
+                const ytMatch = publishing.trailerUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
+                if (ytMatch) {
+                  return (
+                    <iframe
+                      src={`https://www.youtube.com/embed/${ytMatch[1]}`}
+                      title="Trailer Preview"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="w-full h-full border-0"
+                    />
+                  );
+                }
+                return (
+                  <video
+                    src={getImageUrl(publishing.trailerUrl)}
+                    controls
+                    className="w-full h-full object-contain"
+                  />
+                );
+              })()}
+            </div>
+          )}
         </CardContent>
       </Card>
 

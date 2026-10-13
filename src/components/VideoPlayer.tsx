@@ -77,6 +77,9 @@ export default function VideoPlayer({
   const [orientation, setOrientation] = useState<"landscape" | "portrait">(defaultOrientation);
   const [showSkipAnim, setShowSkipAnim] = useState<"left" | "right" | null>(null);
   const [currentSrc, setCurrentSrc] = useState(src);
+  const hlsRef = useRef<Hls | null>(null);
+  const [hlsLevels, setHlsLevels] = useState<Array<{ index: number; label: string; height: number; bitrate?: number }>>([]);
+  const [selectedHlsQuality, setSelectedHlsQuality] = useState<string>("Auto");
 
   useEffect(() => {
     setCurrentSrc(src);
@@ -164,10 +167,26 @@ export default function VideoPlayer({
 
     if (isM3u8 && Hls.isSupported()) {
       hls = new Hls();
+      hlsRef.current = hls;
       hls.loadSource(currentSrc);
       hls.attachMedia(v);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      hls.on(Hls.Events.MANIFEST_PARSED, (_event, data) => {
         setLoading(false);
+        const levels = data?.levels || hls?.levels || [];
+        if (Array.isArray(levels) && levels.length > 0) {
+          const parsed = levels.map((lvl: any, idx: number) => {
+            const h = lvl.height || 0;
+            const label = h ? `${h}p` : (lvl.name || `Level ${idx + 1}`);
+            return {
+              index: idx,
+              label: label.toUpperCase(),
+              height: h,
+              bitrate: lvl.bitrate,
+            };
+          });
+          parsed.sort((a: any, b: any) => (b.height || 0) - (a.height || 0));
+          setHlsLevels(parsed);
+        }
       });
       hls.on(Hls.Events.ERROR, (_event, data) => {
         console.error('HLS error', data);
@@ -181,6 +200,7 @@ export default function VideoPlayer({
     return () => {
       if (hls) {
         hls.destroy();
+        hlsRef.current = null;
       }
     };
   }, [currentSrc]);
@@ -323,8 +343,11 @@ export default function VideoPlayer({
 
   const aspectRatio = orientation === "landscape" ? "16/9" : "9/16";
   const maxWidth = orientation === "landscape" ? "min(100vw, 960px)" : "min(100vw, 360px)";
+  const hasHlsLevels = hlsLevels.length > 0;
   const allQualities = videoQualities?.length ? videoQualities : [{ label: 'Auto', src }];
-  const currentQualityLabel = allQualities.find(q => q.src === currentSrc)?.label || 'Auto';
+  const currentQualityLabel = hasHlsLevels
+    ? selectedHlsQuality
+    : (allQualities.find(q => q.src === currentSrc)?.label || 'Auto');
 
   return (
     <div
@@ -607,7 +630,7 @@ export default function VideoPlayer({
                 </div>
 
                 {/* Quality Selector */}
-                {allQualities.length > 1 && (
+                {(hasHlsLevels || allQualities.length > 1) && (
                   <div className="relative">
                     <button
                       onClick={() => { setShowQualityMenu(!showQualityMenu); setShowSettings(false); }}
@@ -618,15 +641,43 @@ export default function VideoPlayer({
                     {showQualityMenu && (
                       <div className="absolute bottom-8 right-0 bg-zinc-900/95 border border-zinc-700 rounded-xl overflow-hidden shadow-2xl min-w-[120px]">
                         <p className="text-foreground/65 text-[10px] uppercase tracking-widest px-3 pt-2 pb-1 font-semibold">Quality</p>
-                        {allQualities.map((q) => (
-                          <button
-                            key={q.label}
-                            onClick={() => changeQuality(q)}
-                            className={`w-full px-4 py-2 text-sm text-left transition-colors hover:bg-white/10 ${currentQualityLabel === q.label ? "text-primary font-bold" : "text-foreground"}`}
-                          >
-                            {q.label}
-                          </button>
-                        ))}
+                        {hasHlsLevels ? (
+                          <>
+                            <button
+                              onClick={() => {
+                                if (hlsRef.current) hlsRef.current.currentLevel = -1;
+                                setSelectedHlsQuality("Auto");
+                                setShowQualityMenu(false);
+                              }}
+                              className={`w-full px-4 py-2 text-sm text-left transition-colors hover:bg-white/10 ${selectedHlsQuality === "Auto" ? "text-primary font-bold" : "text-foreground"}`}
+                            >
+                              Auto
+                            </button>
+                            {hlsLevels.map((lvl) => (
+                              <button
+                                key={`hls-${lvl.index}-${lvl.label}`}
+                                onClick={() => {
+                                  if (hlsRef.current) hlsRef.current.currentLevel = lvl.index;
+                                  setSelectedHlsQuality(lvl.label);
+                                  setShowQualityMenu(false);
+                                }}
+                                className={`w-full px-4 py-2 text-sm text-left transition-colors hover:bg-white/10 ${selectedHlsQuality === lvl.label ? "text-primary font-bold" : "text-foreground"}`}
+                              >
+                                {lvl.label}
+                              </button>
+                            ))}
+                          </>
+                        ) : (
+                          allQualities.map((q) => (
+                            <button
+                              key={q.label}
+                              onClick={() => changeQuality(q)}
+                              className={`w-full px-4 py-2 text-sm text-left transition-colors hover:bg-white/10 ${currentQualityLabel === q.label ? "text-primary font-bold" : "text-foreground"}`}
+                            >
+                              {q.label}
+                            </button>
+                          ))
+                        )}
                       </div>
                     )}
                   </div>

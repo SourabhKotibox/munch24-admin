@@ -640,14 +640,28 @@ export default function UpcomingManagementPage() {
           </DialogHeader>
 
           <div className="relative aspect-video w-full bg-black rounded-lg overflow-hidden">
-            {previewTrailerUrl && (
-              <video
-                src={previewTrailerUrl}
-                controls
-                autoPlay
-                className="w-full h-full object-contain"
-              />
-            )}
+            {previewTrailerUrl && (() => {
+              const ytMatch = previewTrailerUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
+              if (ytMatch) {
+                return (
+                  <iframe
+                    src={`https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&rel=0`}
+                    title="YouTube trailer player"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    className="w-full h-full border-0"
+                  />
+                );
+              }
+              return (
+                <video
+                  src={getImageUrl(previewTrailerUrl)}
+                  controls
+                  autoPlay
+                  className="w-full h-full object-contain"
+                />
+              );
+            })()}
           </div>
         </DialogContent>
       </Dialog>

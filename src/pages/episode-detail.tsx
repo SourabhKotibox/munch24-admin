@@ -63,6 +63,8 @@ function VideoPlayer({
   const videoRef      = useRef<HTMLVideoElement>(null);
   const containerRef  = useRef<HTMLDivElement>(null);
   const hideTimerRef  = useRef<ReturnType<typeof setTimeout>>();
+  const hlsRef        = useRef<Hls | null>(null);
+  const [hlsLevels,   setHlsLevels]      = useState<Array<{ index: number; label: string; height: number; bitrate: number }>>([]);
   // Seed with resumeFrom so the first canplay/manifest event seeks to the saved position
   const pendingSeekRef = useRef<number | null>(resumeFrom && resumeFrom > 5 ? resumeFrom : null);
 
@@ -369,11 +371,35 @@ function VideoPlayer({
         }
       };
 
+      const updateLevels = (levels: any[]) => {
+        if (Array.isArray(levels) && levels.length > 0) {
+          const parsed = levels.map((lvl: any, idx: number) => {
+            const h = lvl.height || 0;
+            const label = h ? `${h}p` : (lvl.name || `Level ${idx + 1}`);
+            return {
+              index: idx,
+              label: label.toUpperCase(),
+              height: h,
+              bitrate: lvl.bitrate || 0,
+            };
+          });
+          parsed.sort((a: any, b: any) => (b.height || 0) - (a.height || 0));
+          setHlsLevels(parsed);
+        }
+      };
+
       if (isM3u8 && Hls.isSupported()) {
         hls = new Hls();
+        hlsRef.current = hls;
         hls.loadSource(activeSrc);
         hls.attachMedia(v);
-        hls.on(Hls.Events.MANIFEST_PARSED, onManifestParsed);
+        hls.on(Hls.Events.MANIFEST_PARSED, (_event: any, data: any) => {
+          if (data?.levels) updateLevels(data.levels);
+          onManifestParsed();
+        });
+        hls.on(Hls.Events.LEVEL_LOADED, () => {
+          if (hls?.levels) updateLevels(hls.levels);
+        });
       } else {
         v.src = activeSrc;
         v.load();
@@ -400,6 +426,7 @@ function VideoPlayer({
     return () => {
       if (hls) {
         hls.destroy();
+        hlsRef.current = null;
       }
     };
   }, [currentSrc, autoPlay, contentId, episodeId]);
@@ -708,7 +735,7 @@ function VideoPlayer({
                       >
                         <span>Quality</span>
                         <span className="text-[10px] text-foreground/80 flex items-center gap-0.5">
-                          {videoSettings && videoSettings.find(q => q.key === currentQuality)?.label || "Auto"}
+                          {currentQuality.toUpperCase()}
                           <ChevronRight className="w-3 h-3" />
                         </span>
                       </button>
@@ -734,35 +761,62 @@ function VideoPlayer({
                         <ChevronLeft className="w-2.5 h-2.5" /> Back
                       </button>
                       <div className="text-[9px] uppercase font-bold text-foreground tracking-wider px-1.5 pb-1 border-b border-white/5">Quality</div>
-                      <div className="max-h-32 overflow-y-auto mt-1 flex flex-col gap-0.5">
+                      <div className="max-h-48 overflow-y-auto mt-1 flex flex-col gap-0.5">
                         <button
                           onClick={() => {
+                            if (hlsRef.current) {
+                              hlsRef.current.currentLevel = -1;
+                            }
                             const autoUrl = videoSettings?.find(q => q.key === 'auto')?.url || videoSrc;
                             changeQuality("auto", autoUrl);
                             setSettingsOpen(false);
                           }}
                           className="flex items-center justify-between w-full px-1.5 py-1 rounded-lg hover:bg-white/10 text-left transition-colors"
                         >
-                          <span className={currentQuality === "auto" ? "text-red-500 font-bold" : "text-foreground"}>Auto</span>
-                          {currentQuality === "auto" && <Check className="w-3 h-3 text-red-500" />}
+                          <div className="flex flex-col">
+                            <span className={currentQuality.toLowerCase() === "auto" ? "text-red-500 font-bold" : "text-foreground"}>Auto</span>
+                            <span className="text-[9px] text-foreground/60">Adjusts automatically</span>
+                          </div>
+                          {currentQuality.toLowerCase() === "auto" && <Check className="w-3 h-3 text-red-500" />}
                         </button>
-                        {videoSettings && videoSettings.filter(q => q.key !== 'auto').map((q) => (
-                          <button
-                            key={q.key}
-                            onClick={() => {
-                              changeQuality(q.key, q.url);
-                              setSettingsOpen(false);
-                            }}
-                            className="flex items-start justify-between w-full px-1.5 py-1 rounded-lg hover:bg-white/10 text-left transition-colors"
-                          >
-                            <div className="flex flex-col gap-0.5">
-                              <span className={currentQuality === q.key ? "text-red-500 font-bold text-[11px]" : "text-foreground text-[11px]"}>{q.label}</span>
-                              {q.description && <span className="text-foreground/80 text-[9px] leading-tight">{q.description}</span>}
-                            </div>
-                            {currentQuality === q.key && <Check className="w-3 h-3 text-red-500 flex-shrink-0 mt-0.5" />}
-                          </button>
-                        ))}
-
+                        {hlsLevels.length > 0 ? (
+                          hlsLevels.map((lvl) => (
+                            <button
+                              key={`hls-${lvl.index}-${lvl.label}`}
+                              onClick={() => {
+                                if (hlsRef.current) {
+                                  hlsRef.current.currentLevel = lvl.index;
+                                }
+                                setCurrentQuality(lvl.label);
+                                setSettingsOpen(false);
+                              }}
+                              className="flex items-center justify-between w-full px-1.5 py-1 rounded-lg hover:bg-white/10 text-left transition-colors"
+                            >
+                              <div className="flex flex-col">
+                                <span className={currentQuality.toUpperCase() === lvl.label ? "text-red-500 font-bold text-[11px]" : "text-foreground text-[11px]"}>{lvl.label}</span>
+                                {lvl.bitrate > 0 && <span className="text-foreground/60 text-[9px]">{Math.round(lvl.bitrate / 1000)} kbps</span>}
+                              </div>
+                              {currentQuality.toUpperCase() === lvl.label && <Check className="w-3 h-3 text-red-500 flex-shrink-0 mt-0.5" />}
+                            </button>
+                          ))
+                        ) : (
+                          videoSettings && videoSettings.filter(q => q.key !== 'auto').map((q) => (
+                            <button
+                              key={q.key}
+                              onClick={() => {
+                                changeQuality(q.key, q.url);
+                                setSettingsOpen(false);
+                              }}
+                              className="flex items-start justify-between w-full px-1.5 py-1 rounded-lg hover:bg-white/10 text-left transition-colors"
+                            >
+                              <div className="flex flex-col gap-0.5">
+                                <span className={currentQuality.toUpperCase() === q.label.toUpperCase() ? "text-red-500 font-bold text-[11px]" : "text-foreground text-[11px]"}>{q.label}</span>
+                                {q.description && <span className="text-foreground/80 text-[9px] leading-tight">{q.description}</span>}
+                              </div>
+                              {currentQuality.toUpperCase() === q.label.toUpperCase() && <Check className="w-3 h-3 text-red-500 flex-shrink-0 mt-0.5" />}
+                            </button>
+                          ))
+                        )}
                       </div>
                     </>
                   )}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import { Edit2, Eye, EyeOff, Plus, Trash2, PlayCircle, Search } from "lucide-react";
+import { Edit2, Eye, EyeOff, Plus, Trash2, PlayCircle, Search, Play, AlertCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,6 +11,12 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { getImageUrl, useDeleteBanner, useBulkDeleteBanners, useGetBannersList, useUpdateBanner } from "@/lib/api-client";
 
@@ -22,7 +28,10 @@ type BannerRow = {
   imageUrl?: string;
   position: number;
   isActive: boolean;
-  content?: { id?: string; thumbnail?: string; episodeCount?: number; status?: string; contentType?: string };
+  trailerUrl?: string;
+  videoUrl?: string;
+  hasTrailer?: boolean;
+  content?: { id?: string; thumbnail?: string; episodeCount?: number; status?: string; contentType?: string; trailerUrl?: string };
 };
 
 export default function BannersPage() {
@@ -36,6 +45,8 @@ export default function BannersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [previewTrailerUrl, setPreviewTrailerUrl] = useState<string | null>(null);
+  const [previewTitle, setPreviewTitle] = useState("");
 
   const { data: bannersData, isLoading } = useGetBannersList({ admin: true, page: currentPage, limit: itemsPerPage });
   const deleteMutation = useDeleteBanner();
@@ -247,9 +258,35 @@ export default function BannersPage() {
                           {banner.subtitle && (
                             <p className="text-foreground/65 text-xs line-clamp-1">{banner.subtitle}</p>
                           )}
-                          {banner.content?.status && (
-                            <p className="text-muted-foreground text-xs capitalize">{banner.content.status}</p>
-                          )}
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {(() => {
+                              const trailer = banner.trailerUrl || banner.content?.trailerUrl;
+                              if (trailer) {
+                                return (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-5 px-1.5 text-[10px] gap-1 text-primary border-primary/30 hover:bg-primary/10"
+                                    onClick={() => {
+                                      setPreviewTrailerUrl(trailer);
+                                      setPreviewTitle(banner.title);
+                                    }}
+                                  >
+                                    <Play className="w-2.5 h-2.5 fill-current" /> Play Trailer
+                                  </Button>
+                                );
+                              }
+                              return (
+                                <span className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
+                                  <AlertCircle className="w-2.5 h-2.5" /> No trailer
+                                </span>
+                              );
+                            })()}
+                            {banner.content?.status && (
+                              <p className="text-muted-foreground text-xs capitalize">• {banner.content.status}</p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </TableCell>
@@ -364,6 +401,48 @@ export default function BannersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Trailer Preview Dialog */}
+      <Dialog open={!!previewTrailerUrl} onOpenChange={() => setPreviewTrailerUrl(null)}>
+        <DialogContent className="max-w-3xl bg-black border-zinc-800 p-2">
+          <DialogHeader className="p-3 pb-1">
+            <DialogTitle className="text-white text-sm font-bold flex items-center justify-between">
+              <span>{previewTitle} — Banner Trailer Preview</span>
+              <button
+                onClick={() => setPreviewTrailerUrl(null)}
+                className="text-zinc-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="relative aspect-video w-full bg-black rounded-lg overflow-hidden">
+            {previewTrailerUrl && (() => {
+              const ytMatch = previewTrailerUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
+              if (ytMatch) {
+                return (
+                  <iframe
+                    src={`https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&rel=0`}
+                    title="YouTube trailer player"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    className="w-full h-full border-0"
+                  />
+                );
+              }
+              return (
+                <video
+                  src={getImageUrl(previewTrailerUrl)}
+                  controls
+                  autoPlay
+                  className="w-full h-full object-contain"
+                />
+              );
+            })()}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
