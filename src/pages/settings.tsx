@@ -190,12 +190,21 @@ export default function Settings() {
     platformName: ctxSettings.platformName,
     contactNo: ctxSettings.contactNo,
     inquiryEmail: ctxSettings.inquiryEmail,
+    supportPhone: ctxSettings.supportPhone || "",
+    supportEmail: ctxSettings.supportEmail || "",
+    whatsappNumber: ctxSettings.whatsappNumber || "",
+    address: ctxSettings.address || "",
+    websiteUrl: ctxSettings.websiteUrl || "",
+    playStoreUrl: ctxSettings.playStoreUrl || "",
+    appStoreUrl: ctxSettings.appStoreUrl || "",
     siteDescription: ctxSettings.siteDescription,
     copyrightText: ctxSettings.copyrightText,
     facebookUrl: ctxSettings.facebookUrl,
     twitterUrl: ctxSettings.twitterUrl,
     instagramUrl: ctxSettings.instagramUrl,
     youtubeUrl: ctxSettings.youtubeUrl,
+    telegramUrl: ctxSettings.telegramUrl || "",
+    linkedinUrl: ctxSettings.linkedinUrl || "",
     logoStyle: ctxSettings.logoStyle,
     darkLogoWidth: ctxSettings.darkLogoWidth || "",
     lightLogoWidth: ctxSettings.lightLogoWidth || "",
@@ -206,12 +215,21 @@ export default function Settings() {
       platformName: ctxSettings.platformName,
       contactNo: ctxSettings.contactNo,
       inquiryEmail: ctxSettings.inquiryEmail,
+      supportPhone: ctxSettings.supportPhone || "",
+      supportEmail: ctxSettings.supportEmail || "",
+      whatsappNumber: ctxSettings.whatsappNumber || "",
+      address: ctxSettings.address || "",
+      websiteUrl: ctxSettings.websiteUrl || "",
+      playStoreUrl: ctxSettings.playStoreUrl || "",
+      appStoreUrl: ctxSettings.appStoreUrl || "",
       siteDescription: ctxSettings.siteDescription,
       copyrightText: ctxSettings.copyrightText,
       facebookUrl: ctxSettings.facebookUrl,
       twitterUrl: ctxSettings.twitterUrl,
       instagramUrl: ctxSettings.instagramUrl,
       youtubeUrl: ctxSettings.youtubeUrl,
+      telegramUrl: ctxSettings.telegramUrl || "",
+      linkedinUrl: ctxSettings.linkedinUrl || "",
       logoStyle: ctxSettings.logoStyle,
       darkLogoWidth: ctxSettings.darkLogoWidth || "",
       lightLogoWidth: ctxSettings.lightLogoWidth || "",
@@ -220,12 +238,21 @@ export default function Settings() {
     ctxSettings.platformName,
     ctxSettings.contactNo,
     ctxSettings.inquiryEmail,
+    ctxSettings.supportPhone,
+    ctxSettings.supportEmail,
+    ctxSettings.whatsappNumber,
+    ctxSettings.address,
+    ctxSettings.websiteUrl,
+    ctxSettings.playStoreUrl,
+    ctxSettings.appStoreUrl,
     ctxSettings.siteDescription,
     ctxSettings.copyrightText,
     ctxSettings.facebookUrl,
     ctxSettings.twitterUrl,
     ctxSettings.instagramUrl,
     ctxSettings.youtubeUrl,
+    ctxSettings.telegramUrl,
+    ctxSettings.linkedinUrl,
     ctxSettings.logoStyle,
     ctxSettings.darkLogoWidth,
     ctxSettings.lightLogoWidth,
@@ -259,12 +286,21 @@ export default function Settings() {
         platformName: business.platformName,
         contactNo: business.contactNo,
         inquiryEmail: business.inquiryEmail,
+        supportPhone: business.supportPhone,
+        supportEmail: business.supportEmail,
+        whatsappNumber: business.whatsappNumber,
+        address: business.address,
+        websiteUrl: business.websiteUrl,
+        playStoreUrl: business.playStoreUrl,
+        appStoreUrl: business.appStoreUrl,
         siteDescription: business.siteDescription,
         copyrightText: business.copyrightText,
         facebookUrl: business.facebookUrl,
         twitterUrl: business.twitterUrl,
         instagramUrl: business.instagramUrl,
         youtubeUrl: business.youtubeUrl,
+        telegramUrl: business.telegramUrl,
+        linkedinUrl: business.linkedinUrl,
         logoStyle: business.logoStyle,
         darkLogoWidth: business.darkLogoWidth ? Number(business.darkLogoWidth) : 0,
         lightLogoWidth: business.lightLogoWidth ? Number(business.lightLogoWidth) : 0,
@@ -988,46 +1024,156 @@ export default function Settings() {
       </div>
 
       {/* Basic fields */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-        {[
-          { key: "platformName", label: "App Name", placeholder: "StreamVault", req: false },
-          { key: "contactNo", label: "Contact No", placeholder: "+1 234 567 8900", req: true },
-          { key: "inquiryEmail", label: "Inquiry Email", placeholder: "hello@example.com", req: true },
-          { key: "copyrightText", label: "Copyright Text", placeholder: "© 2026 StreamVault. All Rights Reserved.", req: false },
-        ].map(({ key, label, placeholder, req }) => (
-          <div key={key} className="space-y-2">
-            <Label className={labelCls}>
-              {label} {req && <span className="text-primary">*</span>}
-            </Label>
+      <div className="mb-6">
+        <p className="text-sm font-semibold text-foreground mb-4">Basic Information</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="space-y-2">
+            <Label className={labelCls}>App Name</Label>
             <Input
-              value={business[key as keyof typeof business]}
-              onChange={(e) => setBusiness({ ...business, [key]: e.target.value })}
-              placeholder={placeholder}
+              value={business.platformName}
+              onChange={(e) => setBusiness({ ...business, platformName: e.target.value })}
+              placeholder="StreamVault"
               className={inputCls}
             />
           </div>
-        ))}
-        <div className="space-y-2 md:col-span-2">
-          <Label className={labelCls}>Site Description <span className="text-primary">*</span></Label>
-          <Textarea
-            value={business.siteDescription}
-            onChange={(e) => setBusiness({ ...business, siteDescription: e.target.value })}
-            placeholder="StreamVault: Your Ultimate Destination for Unlimited Movies and Shows!"
-            className="bg-background border-border text-foreground focus:border-primary rounded-lg resize-none"
-            rows={3}
-          />
+          <div className="space-y-2">
+            <Label className={labelCls}>Copyright Text</Label>
+            <Input
+              value={business.copyrightText}
+              onChange={(e) => setBusiness({ ...business, copyrightText: e.target.value })}
+              placeholder="© 2026 StreamVault. All Rights Reserved."
+              className={inputCls}
+            />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label className={labelCls}>Site Description <span className="text-primary">*</span></Label>
+            <Textarea
+              value={business.siteDescription}
+              onChange={(e) => setBusiness({ ...business, siteDescription: e.target.value })}
+              placeholder="StreamVault: Your Ultimate Destination for Unlimited Movies and Shows!"
+              className="bg-background border-border text-foreground focus:border-primary rounded-lg resize-none"
+              rows={3}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Customer Support & Contact Info */}
+      <div className="mb-6">
+        <p className="text-sm font-semibold text-foreground mb-1">Customer Support & Contact Info</p>
+        <p className="text-xs text-muted-foreground mb-4">
+          These details are returned in mobile app APIs for the Profile, Contact Us, and Support pages.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="space-y-2">
+            <Label className={labelCls}>Primary Contact No <span className="text-primary">*</span></Label>
+            <Input
+              value={business.contactNo}
+              onChange={(e) => setBusiness({ ...business, contactNo: e.target.value })}
+              placeholder="+91 98765 43210"
+              className={inputCls}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className={labelCls}>Customer Support Phone</Label>
+            <Input
+              value={business.supportPhone}
+              onChange={(e) => setBusiness({ ...business, supportPhone: e.target.value })}
+              placeholder="+91 80000 12345"
+              className={inputCls}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className={labelCls}>Inquiry Email <span className="text-primary">*</span></Label>
+            <Input
+              value={business.inquiryEmail}
+              onChange={(e) => setBusiness({ ...business, inquiryEmail: e.target.value })}
+              placeholder="info@yourcompany.com"
+              className={inputCls}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className={labelCls}>Customer Support Email</Label>
+            <Input
+              value={business.supportEmail}
+              onChange={(e) => setBusiness({ ...business, supportEmail: e.target.value })}
+              placeholder="support@yourcompany.com"
+              className={inputCls}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className={labelCls}>WhatsApp Support Number</Label>
+            <Input
+              value={business.whatsappNumber}
+              onChange={(e) => setBusiness({ ...business, whatsappNumber: e.target.value })}
+              placeholder="+919876543210"
+              className={inputCls}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className={labelCls}>Official Website URL</Label>
+            <Input
+              value={business.websiteUrl}
+              onChange={(e) => setBusiness({ ...business, websiteUrl: e.target.value })}
+              placeholder="https://yourcompany.com"
+              className={inputCls}
+            />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label className={labelCls}>Company / Office Address</Label>
+            <Textarea
+              value={business.address}
+              onChange={(e) => setBusiness({ ...business, address: e.target.value })}
+              placeholder="123 Tech Park, Innovation Way, Bengaluru, Karnataka, 560001"
+              className="bg-background border-border text-foreground focus:border-primary rounded-lg resize-none"
+              rows={2}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* App Store Links */}
+      <div className="mb-6">
+        <p className="text-sm font-semibold text-foreground mb-1">Mobile App Store Links</p>
+        <p className="text-xs text-muted-foreground mb-4">
+          Used for Share App, App Updates, and Store Redirection.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="space-y-2">
+            <Label className={labelCls}>Google Play Store URL</Label>
+            <Input
+              value={business.playStoreUrl}
+              onChange={(e) => setBusiness({ ...business, playStoreUrl: e.target.value })}
+              placeholder="https://play.google.com/store/apps/details?id=com.xoto.ott"
+              className={inputCls}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className={labelCls}>Apple App Store URL</Label>
+            <Input
+              value={business.appStoreUrl}
+              onChange={(e) => setBusiness({ ...business, appStoreUrl: e.target.value })}
+              placeholder="https://apps.apple.com/app/id123456789"
+              className={inputCls}
+            />
+          </div>
         </div>
       </div>
 
       {/* Social URLs */}
       <div className="mb-5">
-        <p className="text-sm font-semibold text-foreground mb-4">Social Media Links</p>
+        <p className="text-sm font-semibold text-foreground mb-1">Social Media Links</p>
+        <p className="text-xs text-muted-foreground mb-4">
+          Displayed as interactive social icons on the mobile app Profile and Contact page.
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {[
             { key: "facebookUrl", label: "Facebook URL", placeholder: "https://facebook.com/yourpage" },
-            { key: "twitterUrl", label: "X (Twitter) URL", placeholder: "https://twitter.com/yourhandle" },
             { key: "instagramUrl", label: "Instagram URL", placeholder: "https://instagram.com/yourpage" },
             { key: "youtubeUrl", label: "YouTube URL", placeholder: "https://youtube.com/@yourchannel" },
+            { key: "twitterUrl", label: "X (Twitter) URL", placeholder: "https://twitter.com/yourhandle" },
+            { key: "telegramUrl", label: "Telegram Channel / Support URL", placeholder: "https://t.me/yourchannel" },
+            { key: "linkedinUrl", label: "LinkedIn URL", placeholder: "https://linkedin.com/company/yourpage" },
           ].map(({ key, label, placeholder }) => (
             <div key={key} className="space-y-2">
               <Label className={labelCls}>{label}</Label>
@@ -1041,8 +1187,6 @@ export default function Settings() {
           ))}
         </div>
       </div>
-
-
 
       <SaveBtn saving={saving} onClick={handleSaveBusiness} />
     </div>

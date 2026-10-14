@@ -13,12 +13,21 @@ export interface AppSettings {
   platformName: string;
   contactNo: string;
   inquiryEmail: string;
+  supportPhone: string;
+  supportEmail: string;
+  whatsappNumber: string;
+  address: string;
+  websiteUrl: string;
+  playStoreUrl: string;
+  appStoreUrl: string;
   siteDescription: string;
   copyrightText: string;
   facebookUrl: string;
   twitterUrl: string;
   instagramUrl: string;
   youtubeUrl: string;
+  telegramUrl: string;
+  linkedinUrl: string;
   loginTitle: string;
   loginSubtitle: string;
   loginButtonText: string;
@@ -155,12 +164,21 @@ const DEFAULT: AppSettings = {
   platformName: "Triple Minds",
   contactNo: "",
   inquiryEmail: "",
+  supportPhone: "",
+  supportEmail: "",
+  whatsappNumber: "",
+  address: "",
+  websiteUrl: "",
+  playStoreUrl: "https://play.google.com/store/apps/details?id=com.xoto.ott",
+  appStoreUrl: "",
   siteDescription: "",
   copyrightText: "© 2026 Triple Minds. All Rights Reserved.",
   facebookUrl: "",
   twitterUrl: "",
   instagramUrl: "",
   youtubeUrl: "",
+  telegramUrl: "",
+  linkedinUrl: "",
   loginTitle: "Welcome Back",
   loginSubtitle: "Admin Console",
   loginButtonText: "Sign In",
@@ -322,12 +340,21 @@ function mapApiData(api: any): AppSettings {
     platformName: api.platformName || "",
     contactNo: api.contactNo || "",
     inquiryEmail: api.inquiryEmail || "",
+    supportPhone: api.supportPhone || "",
+    supportEmail: api.supportEmail || "",
+    whatsappNumber: api.whatsappNumber || "",
+    address: api.address || "",
+    websiteUrl: api.websiteUrl || "",
+    playStoreUrl: api.playStoreUrl || DEFAULT.playStoreUrl,
+    appStoreUrl: api.appStoreUrl || "",
     siteDescription: api.siteDescription || "",
     copyrightText: api.copyrightText || "",
     facebookUrl: api.facebookUrl || "",
     twitterUrl: api.twitterUrl || "",
     instagramUrl: api.instagramUrl || "",
     youtubeUrl: api.youtubeUrl || "",
+    telegramUrl: api.telegramUrl || "",
+    linkedinUrl: api.linkedinUrl || "",
     loginTitle: api.loginTitle || DEFAULT.loginTitle,
     loginSubtitle: api.loginSubtitle || DEFAULT.loginSubtitle,
     loginButtonText: api.loginButtonText || DEFAULT.loginButtonText,
