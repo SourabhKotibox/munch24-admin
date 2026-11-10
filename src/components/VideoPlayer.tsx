@@ -7,6 +7,7 @@ import {
 import Hls from "hls.js";
 import { useAdPlayback } from "@/hooks/useAdPlayback";
 import AdOverlay from "@/components/AdOverlay";
+import { getImageUrl } from "@/lib/api-client";
 
 export interface VideoQuality {
   label: string;
@@ -156,19 +157,31 @@ export default function VideoPlayer({
     || Boolean(processingStatus && !src && processingStatus !== "ready" && processingStatus !== "failed");
 
   // HLS / MP4 setup
+  const ytMatch = currentSrc ? currentSrc.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/) : null;
+  const isYouTube = Boolean(ytMatch);
+  const ytVideoId = ytMatch ? ytMatch[1] : null;
+
+  const effectiveMediaSrc = (!currentSrc || isYouTube) 
+    ? "" 
+    : (currentSrc.startsWith("http://") || currentSrc.startsWith("https://") || currentSrc.startsWith("blob:") ? currentSrc : getImageUrl(currentSrc));
+
   useEffect(() => {
+    if (isYouTube) {
+      setLoading(false);
+      return;
+    }
     const v = videoRef.current;
-    if (!v || !currentSrc || isProcessing) return;
+    if (!v || !effectiveMediaSrc || isProcessing) return;
 
     let hls: Hls | null = null;
-    const isM3u8 = currentSrc.includes('.m3u8');
+    const isM3u8 = effectiveMediaSrc.includes('.m3u8');
 
     setLoading(true);
 
     if (isM3u8 && Hls.isSupported()) {
       hls = new Hls();
       hlsRef.current = hls;
-      hls.loadSource(currentSrc);
+      hls.loadSource(effectiveMediaSrc);
       hls.attachMedia(v);
       hls.on(Hls.Events.MANIFEST_PARSED, (_event, data) => {
         setLoading(false);
@@ -192,7 +205,7 @@ export default function VideoPlayer({
         console.error('HLS error', data);
       });
     } else {
-      v.src = currentSrc;
+      v.src = effectiveMediaSrc;
       v.load();
       setLoading(false);
     }
@@ -203,7 +216,7 @@ export default function VideoPlayer({
         hlsRef.current = null;
       }
     };
-  }, [currentSrc]);
+  }, [effectiveMediaSrc, isYouTube, isProcessing]);
 
   const togglePlay = useCallback(() => {
     const v = videoRef.current;
@@ -361,32 +374,42 @@ export default function VideoPlayer({
         onMouseMove={resetHideTimer}
         onClick={(e) => { if (e.currentTarget === e.target) togglePlay(); }}
       >
-        {/* Video */}
-        <video
-          ref={videoRef}
-          poster={poster}
-          className="w-full h-full object-contain"
-          onLoadedMetadata={() => {
-            const v = videoRef.current;
-            if (!v) return;
-            setDuration(v.duration || 0);
-            setLoading(false);
-          }}
-          onTimeUpdate={() => {
-            const v = videoRef.current;
-            if (!v) return;
-            setCurrentTime(v.currentTime);
-            setProgress(duration ? (v.currentTime / duration) * 100 : 0);
-          }}
-          onWaiting={() => setLoading(true)}
-          onCanPlay={() => setLoading(false)}
-          onEnded={() => {
-            setPlaying(false);
-          }}
-          onPlay={() => setPlaying(true)}
-          onPause={() => setPlaying(false)}
-          onClick={togglePlay}
-        />
+        {/* Video / YouTube Trailer */}
+        {isYouTube && ytVideoId ? (
+          <iframe
+            src={`https://www.youtube.com/embed/${ytVideoId}?autoplay=1&rel=0`}
+            title={title || "Trailer Preview"}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            className="w-full h-full border-0 absolute inset-0 z-10"
+          />
+        ) : (
+          <video
+            ref={videoRef}
+            poster={poster}
+            className="w-full h-full object-contain"
+            onLoadedMetadata={() => {
+              const v = videoRef.current;
+              if (!v) return;
+              setDuration(v.duration || 0);
+              setLoading(false);
+            }}
+            onTimeUpdate={() => {
+              const v = videoRef.current;
+              if (!v) return;
+              setCurrentTime(v.currentTime);
+              setProgress(duration ? (v.currentTime / duration) * 100 : 0);
+            }}
+            onWaiting={() => setLoading(true)}
+            onCanPlay={() => setLoading(false)}
+            onEnded={() => {
+              setPlaying(false);
+            }}
+            onPlay={() => setPlaying(true)}
+            onPause={() => setPlaying(false)}
+            onClick={togglePlay}
+          />
+        )}
 
         {isProcessing && (
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 text-center px-6">
@@ -483,10 +506,22 @@ export default function VideoPlayer({
         )}
 
         {/* Controls Overlay */}
-        <div
-          className={`absolute inset-0 flex flex-col justify-between transition-opacity duration-300 ${showControls || !playing ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-          style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 25%, transparent 65%, rgba(0,0,0,0.9) 100%)" }}
-        >
+        {isYouTube ? (
+          onClose && (
+            <div className="absolute top-4 right-4 z-20">
+              <button
+                onClick={onClose}
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-black/70 hover:bg-black/90 text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          )
+        ) : (
+          <div
+            className={`absolute inset-0 flex flex-col justify-between transition-opacity duration-300 ${showControls || !playing ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+            style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 25%, transparent 65%, rgba(0,0,0,0.9) 100%)" }}
+          >
           {/* Top Bar */}
           <div className="flex items-center justify-between px-4 pt-4">
             <div className="flex-1 min-w-0">
@@ -712,6 +747,7 @@ export default function VideoPlayer({
             </div>
           </div>
         </div>
+        )}
 
         {/* Orientation label */}
         <div className="absolute top-3 left-3 pointer-events-none">
