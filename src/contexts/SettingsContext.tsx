@@ -210,7 +210,7 @@ const DEFAULT: AppSettings = {
   vipTitle: "Unlock the",
   vipHighlight: "Ultimate Experience",
   vipSubtitle: "Get unlimited ad-free streaming, offline downloads, and exclusive access to our premium catalog.",
-  primaryColor: "#e50914",
+  primaryColor: "#DB0203",
   colorTheme: "blue-green",
   navbarStyle: 'default',
   navbarHide: false,

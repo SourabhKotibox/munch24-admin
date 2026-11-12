@@ -66,7 +66,7 @@ function ThemeApplier() {
     }
     
     // Convert primary color to HSL
-    const hsl = hexToHSL(primaryColor || "#e50914");
+    const hsl = hexToHSL(primaryColor || "#DB0203");
     root.style.setProperty("--primary", `${hsl.h} ${hsl.s}% ${hsl.l}%`);
     root.style.setProperty("--sidebar-primary", `${hsl.h} ${hsl.s}% ${hsl.l}%`);
     root.style.setProperty("--destructive", `${hsl.h} ${hsl.s}% ${hsl.l}%`);
